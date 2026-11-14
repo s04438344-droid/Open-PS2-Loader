@@ -185,6 +185,8 @@ void guiStartFrame(void)
 {
     guiLock();
     rmStartFrame();
+    rmDrawPlasma();
+
     guiFrameId++;
 }
 
