@@ -411,25 +411,26 @@ void rmDrawPlasma(void)
 
             if (v < 32)
             {
-                r = 100 + v * 4;
-                g = 10;
-                b = 0;
+                r = 60 + v * 2;
+                g = 0;
+                b = 100 + v * 4;
             }
             else if (v < 64)
             {
-                r = 255;
-                g = (v - 32) * 6;
-                b = 0;
+                r = 130 + (v - 32) * 3;
+                g = 10;
+                b = 255;
             }
             else
             {
                 r = 255;
-                g = 192 + (v - 64) * 2;
-                b = 10;
+                g = 80 + (v - 64) * 3;
+                b = 255;
             }
 
             if (r > 255) r = 255;
             if (g > 255) g = 255;
+            if (b > 255) b = 255;
 
             color = GS_SETREG_RGBA(r, g, b, 0x80);
 
@@ -443,6 +444,7 @@ void rmDrawPlasma(void)
         }
     }
 }
+
 
 void rmDrawLine(int x1, int y1, int x2, int y2, u64 color)
 {
