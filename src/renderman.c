@@ -11,6 +11,7 @@
 #include "include/opl.h"
 #include "include/renderman.h"
 #include "include/ioman.h"
+#include "include/themes.h"
 
 // Allocateable space in vram, as indicated in GsKit's code
 #define __VRAM_SIZE 4194304
@@ -405,7 +406,7 @@ void rmDrawPlasma(void)
         -2, -1, 0, 1, 2, 1, 0, -1
     };
     int x, y;
-    int r, w1, w2, w3, combined, crest;
+    int intensity, r, g, b, w1, w2, w3, combined, crest;
     u64 color;
 
     timer++;
@@ -430,11 +431,21 @@ void rmDrawPlasma(void)
 
             crest = (combined + ((combined * combined) >> 8)) >> 1;
 
-            // Paleta Vermelho Escuro e Preto (suave para os olhos)
-            r = 8 + ((crest * 165) >> 8);
-            if (r > 255) r = 255;
+            // Calcula o brilho (0 = preto nos vales, até 175 no pico)
+            intensity = (crest * 175) >> 8;
 
-            color = GS_SETREG_RGBA(r, 0, 0, 0x80);
+            // Aplica o brilho sobre a Background Color atual do OPL
+            if (gTheme) {
+                r = (*(gTheme->bgColor + 0) * intensity) >> 8;
+                g = (*(gTheme->bgColor + 1) * intensity) >> 8;
+                b = (*(gTheme->bgColor + 2) * intensity) >> 8;
+            } else {
+                r = intensity;
+                g = 0;
+                b = 0;
+            }
+
+            color = GS_SETREG_RGBA(r, g, b, 0x80);
 
             rmDrawRect(
                 x * 8,
@@ -446,6 +457,7 @@ void rmDrawPlasma(void)
         }
     }
 }
+
 
 
 void rmDrawLine(int x1, int y1, int x2, int y2, u64 color)
