@@ -381,19 +381,6 @@ void rmDrawOverlayPixmap(GSTEXTURE *overlay, int x, int y, short aligned, int w,
     rmDrawQuad(&quad);
 }
 
-void rmDrawRect(int x, int y, int w, int h, u64 color)
-{
-    float fx = X_SCALE(x) + fRenderXOff;
-    float fy = Y_SCALE(y) + fRenderYOff;
-    float fw = X_SCALE(w);
-    float fh = Y_SCALE(h);
-
-    gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
-    gsKit_prim_sprite(gsGlobal, fx, fy, fx + fw, fy + fh, order, color);
-    order++;
-}
-
-
 void rmDrawPlasma(void)
 {
     static unsigned int phase = 0;
@@ -410,26 +397,26 @@ void rmDrawPlasma(void)
     u64 color;
 
     timer++;
-    if (timer >= 5)
+    if (timer >= 4)
     {
         phase++;
         timer = 0;
     }
 
-    for (y = 0; y < 30; y++)
+    for (y = 0; y < 60; y++)
     {
-        int y_base = y * 4;
-        for (x = 0; x < 40; x++)
+        int y_base = y * 2;
+        for (x = 0; x < 80; x++)
         {
-            w1 = sin_table[(x * 2 + phase) & 63];
-            w2 = sin_table[(y_base + (sin_table[(x + phase) & 63] >> 1)) & 63];
-            w3 = sin_table[(x * 2 - y * 2 + phase + 16) & 63];
+            w1 = sin_table[(x + phase) & 63];
+            w2 = sin_table[(y_base + (sin_table[((x >> 1) + phase) & 63] >> 1)) & 63];
+            w3 = sin_table[(x + y + phase + 16) & 63];
 
             combined = ((w1 + w2 + w3 + 96) * 340) >> 8;
             if (combined > 255) combined = 255;
             if (combined < 0) combined = 0;
 
-            crest = (combined * combined) >> 8;
+            crest = (combined + ((combined * combined) >> 8)) >> 1;
 
             // Paleta Vermelho Escuro e Preto (suave para os olhos)
             r = 8 + ((crest * 165) >> 8);
@@ -438,10 +425,10 @@ void rmDrawPlasma(void)
             color = GS_SETREG_RGBA(r, 0, 0, 0x80);
 
             rmDrawRect(
-                x * 16,
-                y * 16,
-                16,
-                16,
+                x * 8,
+                y * 8,
+                9,
+                9,
                 color
             );
         }
