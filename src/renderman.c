@@ -396,49 +396,49 @@ void rmDrawRect(int x, int y, int w, int h, u64 color)
 
 void rmDrawPlasma(void)
 {
-    static unsigned int phase = 0;
+    static float phase = 0.0f;
     int x, y;
-    int v, r, g, b;
+    int r, g, b;
+    float nx, ny, wave1, wave2, wave3, combined;
     u64 color;
 
-    phase++;
+    phase += 0.06f;
 
-    for (y = 0; y < 12; y++)
+    for (y = 0; y < 48; y++)
     {
-        for (x = 0; x < 32; x++)
+        for (x = 0; x < 64; x++)
         {
-            v = (x * 7 + y * 11 + phase * 3) % 96;
+            nx = (float)x * 0.14f;
+            ny = (float)y * 0.18f;
 
-            if (v < 32)
-            {
-                r = 60 + v * 2;
-                g = 0;
-                b = 100 + v * 4;
-            }
-            else if (v < 64)
-            {
-                r = 130 + (v - 32) * 3;
-                g = 10;
-                b = 255;
-            }
-            else
-            {
-                r = 255;
-                g = 80 + (v - 64) * 3;
-                b = 255;
-            }
+            // Ondas fluidas cruzando a tela
+            wave1 = sinf(nx + phase);
+            wave2 = sinf(ny * 1.5f + sinf(nx * 0.8f + phase * 1.2f) * 2.0f);
+            wave3 = cosf((nx - ny) * 0.7f - phase * 0.8f);
+
+            combined = (wave1 + wave2 + wave3 + 3.0f) / 6.0f;
+
+            // Destaque brilhante nas cristas das ondas (Roxo / Neon)
+            float crest = powf(combined, 2.2f);
+
+            r = (int)(45 + crest * 210);
+            g = (int)(5 + powf(combined, 4.0f) * 160);
+            b = (int)(110 + combined * 145);
 
             if (r > 255) r = 255;
             if (g > 255) g = 255;
             if (b > 255) b = 255;
+            if (r < 0) r = 0;
+            if (g < 0) g = 0;
+            if (b < 0) b = 0;
 
             color = GS_SETREG_RGBA(r, g, b, 0x80);
 
             rmDrawRect(
-                x * 20,
-                y * 40,
-                20,
-                40,
+                x * 10,
+                y * 10,
+                10,
+                10,
                 color
             );
         }
