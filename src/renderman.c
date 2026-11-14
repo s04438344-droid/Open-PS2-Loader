@@ -396,49 +396,51 @@ void rmDrawRect(int x, int y, int w, int h, u64 color)
 
 void rmDrawPlasma(void)
 {
-    static float phase = 0.0f;
+    static unsigned int phase = 0;
+    static const int sin_table[64] = {
+        0, 3, 6, 9, 12, 15, 18, 21, 24, 26, 28, 30, 31, 32, 32, 32,
+        31, 30, 28, 26, 24, 21, 18, 15, 12, 9, 6, 3, 0, -3, -6, -9,
+        -12, -15, -18, -21, -24, -26, -28, -30, -31, -32, -32, -32,
+        -31, -30, -28, -26, -24, -21, -18, -15, -12, -9, -6, -3,
+        -2, -1, 0, 1, 2, 1, 0, -1
+    };
     int x, y;
     int r, g, b;
-    float nx, ny, wave1, wave2, wave3, combined;
+    int w1, w2, w3, combined, crest;
     u64 color;
 
-    phase += 0.06f;
+    phase++;
 
-    for (y = 0; y < 48; y++)
+    for (y = 0; y < 24; y++)
     {
-        for (x = 0; x < 64; x++)
+        for (x = 0; x < 32; x++)
         {
-            nx = (float)x * 0.14f;
-            ny = (float)y * 0.18f;
+            w1 = sin_table[(x * 3 + phase) & 63];
+            w2 = sin_table[(y * 5 + (sin_table[(x * 2 + phase) & 63] >> 1)) & 63];
+            w3 = sin_table[(x * 2 - y * 2 + phase + 16) & 63];
 
-            // Ondas fluidas cruzando a tela
-            wave1 = sinf(nx + phase);
-            wave2 = sinf(ny * 1.5f + sinf(nx * 0.8f + phase * 1.2f) * 2.0f);
-            wave3 = cosf((nx - ny) * 0.7f - phase * 0.8f);
+            combined = ((w1 + w2 + w3 + 96) * 340) >> 8;
+            if (combined > 255) combined = 255;
+            if (combined < 0) combined = 0;
 
-            combined = (wave1 + wave2 + wave3 + 3.0f) / 6.0f;
+            crest = (combined * combined) >> 8;
 
-            // Destaque brilhante nas cristas das ondas (Roxo / Neon)
-            float crest = powf(combined, 2.2f);
-
-            r = (int)(45 + crest * 210);
-            g = (int)(5 + powf(combined, 4.0f) * 160);
-            b = (int)(110 + combined * 145);
+            // Paleta Vermelho e Preto
+            r = 10 + ((crest * 245) >> 8);
+            g = (((crest * crest) >> 8) * 35) >> 8;
+            b = 0;
 
             if (r > 255) r = 255;
             if (g > 255) g = 255;
             if (b > 255) b = 255;
-            if (r < 0) r = 0;
-            if (g < 0) g = 0;
-            if (b < 0) b = 0;
 
             color = GS_SETREG_RGBA(r, g, b, 0x80);
 
             rmDrawRect(
-                x * 10,
-                y * 10,
-                10,
-                10,
+                x * 20,
+                y * 20,
+                20,
+                20,
                 color
             );
         }
