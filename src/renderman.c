@@ -393,6 +393,57 @@ void rmDrawRect(int x, int y, int w, int h, u64 color)
     order++;
 }
 
+
+void rmDrawPlasma(void)
+{
+    static unsigned int phase = 0;
+    int x, y;
+    int v, r, g, b;
+    u64 color;
+
+    phase++;
+
+    for (y = 0; y < 12; y++)
+    {
+        for (x = 0; x < 32; x++)
+        {
+            v = (x * 7 + y * 11 + phase * 3) % 96;
+
+            if (v < 32)
+            {
+                r = 100 + v * 4;
+                g = 10;
+                b = 0;
+            }
+            else if (v < 64)
+            {
+                r = 255;
+                g = (v - 32) * 6;
+                b = 0;
+            }
+            else
+            {
+                r = 255;
+                g = 192 + (v - 64) * 2;
+                b = 10;
+            }
+
+            if (r > 255) r = 255;
+            if (g > 255) g = 255;
+
+            color = GS_SETREG_RGBA(r, g, b, 0x80);
+
+            rmDrawRect(
+                x * 20,
+                y * 40,
+                20,
+                40,
+                color
+            );
+        }
+    }
+}
+
 void rmDrawLine(int x1, int y1, int x2, int y2, u64 color)
 {
     float fx1 = X_SCALE(x1) + fRenderXOff;
