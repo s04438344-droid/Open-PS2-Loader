@@ -397,7 +397,8 @@ void rmDrawRect(int x, int y, int w, int h, u64 color)
 void rmDrawPlasma(void)
 {
     static unsigned int phase = 0;
-    static const int sin_table[64] = {
+    static unsigned int timer = 0;
+    static const int sin_table[] = {
         0, 3, 6, 9, 12, 15, 18, 21, 24, 26, 28, 30, 31, 32, 32, 32,
         31, 30, 28, 26, 24, 21, 18, 15, 12, 9, 6, 3, 0, -3, -6, -9,
         -12, -15, -18, -21, -24, -26, -28, -30, -31, -32, -32, -32,
@@ -405,18 +406,23 @@ void rmDrawPlasma(void)
         -2, -1, 0, 1, 2, 1, 0, -1
     };
     int x, y;
-    int r, g, b;
-    int w1, w2, w3, combined, crest;
+    int r, w1, w2, w3, combined, crest;
     u64 color;
 
-    phase++;
-
-    for (y = 0; y < 24; y++)
+    timer++;
+    if (timer >= 5)
     {
-        for (x = 0; x < 32; x++)
+        phase++;
+        timer = 0;
+    }
+
+    for (y = 0; y < 30; y++)
+    {
+        int y_base = y * 4;
+        for (x = 0; x < 40; x++)
         {
-            w1 = sin_table[(x * 3 + phase) & 63];
-            w2 = sin_table[(y * 5 + (sin_table[(x * 2 + phase) & 63] >> 1)) & 63];
+            w1 = sin_table[(x * 2 + phase) & 63];
+            w2 = sin_table[(y_base + (sin_table[(x + phase) & 63] >> 1)) & 63];
             w3 = sin_table[(x * 2 - y * 2 + phase + 16) & 63];
 
             combined = ((w1 + w2 + w3 + 96) * 340) >> 8;
@@ -425,22 +431,17 @@ void rmDrawPlasma(void)
 
             crest = (combined * combined) >> 8;
 
-            // Paleta Vermelho e Preto
-            r = 10 + ((crest * 245) >> 8);
-            g = (((crest * crest) >> 8) * 35) >> 8;
-            b = 0;
-
+            // Paleta Vermelho Escuro e Preto (suave para os olhos)
+            r = 8 + ((crest * 165) >> 8);
             if (r > 255) r = 255;
-            if (g > 255) g = 255;
-            if (b > 255) b = 255;
 
-            color = GS_SETREG_RGBA(r, g, b, 0x80);
+            color = GS_SETREG_RGBA(r, 0, 0, 0x80);
 
             rmDrawRect(
-                x * 20,
-                y * 20,
-                20,
-                20,
+                x * 16,
+                y * 16,
+                16,
+                16,
                 color
             );
         }
