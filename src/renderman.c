@@ -381,6 +381,18 @@ void rmDrawOverlayPixmap(GSTEXTURE *overlay, int x, int y, short aligned, int w,
     rmDrawQuad(&quad);
 }
 
+void rmDrawRect(int x, int y, int w, int h, u64 color)
+{
+    float fx = X_SCALE(x) + fRenderXOff;
+    float fy = Y_SCALE(y) + fRenderYOff;
+    float fw = X_SCALE(w);
+    float fh = Y_SCALE(h);
+
+    gsGlobal->PrimAlphaEnable = GS_SETTING_ON;
+    gsKit_prim_sprite(gsGlobal, fx, fy, fx + fw, fy + fh, order, color);
+    order++;
+}
+
 void rmDrawPlasma(void)
 {
     static unsigned int phase = 0;
