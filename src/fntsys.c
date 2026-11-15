@@ -286,6 +286,8 @@ void fntInit()
         fntInitSlot(&fonts[i]);
 
     fntLoadDefault(NULL);
+        fntLoadFile(NULL, 21);
+
 }
 
 int fntLoadFile(char *path, int fontSize)
