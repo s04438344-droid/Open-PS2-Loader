@@ -1305,6 +1305,8 @@ static void thmLoad(const char *themePath)
     // for that, we load the fonts and a translation table
     if (themePath)
         thmLoadFonts(themeConfig, themePath, newT);
+    else
+        newT->fonts[1] = fntLoadFile(NULL, 21);
 
     int i = 1, j;
     snprintf(path, sizeof(path), "main0");
