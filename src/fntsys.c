@@ -309,16 +309,25 @@ int fntLoadDefault(char *path)
 {
     font_t newFont, oldFont;
 
-    if (fntLoadSlot(&newFont, path, 21) != FNT_ERROR) {
+    if (!fonts[FNT_DEFAULT].isValid) {
+        if (fntLoadSlot(&newFont, NULL, 17) != FNT_ERROR) {
+            WaitSema(gFontSemaId);
+            memcpy(&oldFont, &fonts[FNT_DEFAULT], sizeof(font_t));
+            memcpy(&fonts[FNT_DEFAULT], &newFont, sizeof(font_t));
+            SignalSema(gFontSemaId);
+            fntDeleteSlot(&oldFont);
+        }
+    }
+
+    font_t newFont2, oldFont2;
+    if (fntLoadSlot(&newFont2, path, 21) != FNT_ERROR) {
         WaitSema(gFontSemaId);
-        memcpy(&oldFont, &fonts[FNT_DEFAULT], sizeof(font_t));
-        memcpy(&fonts[FNT_DEFAULT], &newFont, sizeof(font_t));
+        memcpy(&oldFont2, &fonts[0 + 1], sizeof(font_t));
+        memcpy(&fonts[0 + 1], &newFont2, sizeof(font_t));
         SignalSema(gFontSemaId);
 
-        fntDeleteSlot(&oldFont);
-
-        if (!fonts[0 + 1].isValid)
-            fntLoadSlot(&fonts[0 + 1], NULL, 17);
+        if (oldFont2.isValid)
+            fntDeleteSlot(&oldFont2);
 
         return 0;
     }
