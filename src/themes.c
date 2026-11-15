@@ -1305,7 +1305,7 @@ static void thmLoad(const char *themePath)
     if (themePath)
         thmLoadFonts(themeConfig, themePath, newT);
     else
-        newT->fonts[1 - 1] = 1;
+        newT->fonts = 0;
 
 
     int i = 1, j;
