@@ -286,6 +286,7 @@ void fntInit()
         fntInitSlot(&fonts[i]);
 
     fntLoadDefault(NULL);
+    fntLoadFile(NULL, 18);
 
 }
 
