@@ -1303,7 +1303,7 @@ static void thmLoad(const char *themePath)
 
     // before loading the element definitions, we have to have the fonts prepared
     // for that, we load the fonts and a translation table
-        if (themePath)
+            if (themePath)
         thmLoadFonts(themeConfig, themePath, newT);
     else
         newT->fonts[0 + 1] = 1;
