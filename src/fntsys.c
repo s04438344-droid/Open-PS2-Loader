@@ -286,7 +286,6 @@ void fntInit()
         fntInitSlot(&fonts[i]);
 
     fntLoadDefault(NULL);
-        fntLoadFile(NULL, 21);
 
 }
 
@@ -310,7 +309,7 @@ int fntLoadDefault(char *path)
 {
     font_t newFont, oldFont;
 
-        if (fntLoadSlot(&newFont, path, 21) != FNT_ERROR) {
+        if (fntLoadSlot(&newFont, path, 17) != FNT_ERROR) {
         // copy over the new font definition
         // we have to lock this phase, as the old font may still be used
         // Note: No check for concurrency is done here, which is kinda funky!
