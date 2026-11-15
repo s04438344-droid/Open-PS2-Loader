@@ -309,21 +309,16 @@ int fntLoadDefault(char *path)
 {
     font_t newFont, oldFont;
 
-    if (fntLoadSlot(&newFont, path, 17) != FNT_ERROR) {
-        // copy over the new font definition
-        // we have to lock this phase, as the old font may still be used
-        // Note: No check for concurrency is done here, which is kinda funky!
+    if (fntLoadSlot(&newFont, path, 21) != FNT_ERROR) {
         WaitSema(gFontSemaId);
         memcpy(&oldFont, &fonts[FNT_DEFAULT], sizeof(font_t));
         memcpy(&fonts[FNT_DEFAULT], &newFont, sizeof(font_t));
         SignalSema(gFontSemaId);
 
-        // delete the old font
         fntDeleteSlot(&oldFont);
 
-        if (fonts[0 + 1].isValid)
-            fntDeleteSlot(&fonts[0 + 1]);
-        fntLoadSlot(&fonts[0 + 1], path, 21);
+        if (!fonts[0 + 1].isValid)
+            fntLoadSlot(&fonts[0 + 1], NULL, 17);
 
         return 0;
     }
