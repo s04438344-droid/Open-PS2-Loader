@@ -1300,10 +1300,7 @@ static void thmLoad(const char *themePath)
 
     if (configGetColor(themeConfig, "sel_text_color", color))
         newT->selTextColor = GS_SETREG_RGBA(color[0], color[1], color[2], 0x80);
-
     // before loading the element definitions, we have to have the fonts prepared
-    // for that, we load the fonts and a translation table
-                // before loading the element definitions, we have to have the fonts prepared
     // for that, we load the fonts and a translation table
     if (themePath)
         thmLoadFonts(themeConfig, themePath, newT);
