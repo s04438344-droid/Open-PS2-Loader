@@ -1043,10 +1043,7 @@ void menuHandleInputMain()
     }
 }
 extern void updateDiagnostics(void);
-extern char diagTitle[64], diagModel[64], diagRam[64], diagStorage[64];
-extern int screenWidth, screenHeight;
-
-extern void updateDiagnostics(void);
+extern char diagTitle[64], diagBios[64], diagMc[64], diagModel[64], diagRam[128], diagStorage[128];
 
 void menuRenderInfo(void)
 {
@@ -1055,19 +1052,31 @@ void menuRenderInfo(void)
 
     updateDiagnostics();
 
-    // Fundo escuro centralizado
-    rmDrawRect(50, 70, screenWidth - 100, screenHeight - 140, gColDarker);
-    rmDrawLine(50, 70, screenWidth - 50, 70, gColWhite);
-    rmDrawLine(50, screenHeight - 70, screenWidth - 50, screenHeight - 70, gColWhite);
+    // Fundo escuro centralizado e bordas
+    rmDrawRect(40, 50, screenWidth - 80, screenHeight - 100, gColDarker);
+    rmDrawLine(40, 50, screenWidth - 40, 50, gColWhite);
+    rmDrawLine(40, 88, screenWidth - 40, 88, gColWhite);
+    rmDrawLine(40, screenHeight - 50, screenWidth - 40, screenHeight - 50, gColWhite);
 
-    // Título e informações de diagnóstico
-        // T3ítulo e informações de diagnóstico
-    fntRenderString(gTheme->fonts[0], screenWidth >> 1, 85, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
-    fntRenderString(gTheme->fonts[0], 70, 140, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
-    fntRenderString(gTheme->fonts[0], 70, 175, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
-    fntRenderString(gTheme->fonts[0], 70, 210, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
+    // Cabeçalho
+    fntRenderString(gTheme->fonts[0], screenWidth >> 1, 60, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
 
+    // Seção 1: Hardware (BIOS e Memory Cards)
+    fntRenderString(gTheme->fonts[0], 60, 105, ALIGN_LEFT, 0, 0, diagBios, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], 60, 135, ALIGN_LEFT, 0, 0, diagMc, gTheme->textColor);
+
+    // Linha divisória
+    rmDrawLine(60, 168, screenWidth - 60, 168, gColWhite);
+
+    // Seção 2: Armazenamento (Partição OPL, HDD, USB, MX4SIO)
+    fntRenderString(gTheme->fonts[0], 60, 185, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], 60, 215, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], 60, 245, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
+
+    // Rodapé
+    fntRenderString(gTheme->fonts[0], screenWidth >> 1, screenHeight - 78, ALIGN_CENTER, 0, 0, "[O] ou [Quadrado] Voltar", gTheme->selTextColor);
 }
+
 
 void menuHandleInputInfo()
 {
