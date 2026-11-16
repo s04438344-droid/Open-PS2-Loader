@@ -169,49 +169,29 @@ char diagStorage[64];
 
 void updateDiagnostics(void)
 {
-    char usbStatus[64] = "Nao detectado";
-    char mxStatus[64] = "Nao detectado";
+    char usbStatus[32] = "Nao detectado";
+    char mxStatus[32] = "Nao detectado";
     char devPath[16];
-    char drvName[32];
+    DIR *dir;
 
     for (int i = 0; i < 4; i++) {
-        snprintf(devPath, sizeof(devPath), "mass%d:", i);
-        int fd = fileXioDopen(devPath);
-        if (fd >= 0) {
-            fileXioDclose(fd);
-            memset(drvName, 0, sizeof(drvName));
-
-            // Verifica se o dispositivo e USB ou MX4SIO
-            int isMx4sio = 0;
-            if (fileXioDevctl(devPath, 0x5001, NULL, 0, drvName, sizeof(drvName)) >= 0) {
-                if (strstr(drvName, "mx4sio") != NULL)
-                    isMx4sio = 1;
-            } else if (i == 1) {
-                isMx4sio = 1;
-            }
-
-            // Consulta o espaco livre em MB usando devctl do BDM/FATFS
-            u64 freeSpace = 0;
-            if (fileXioDevctl(devPath, 0x5002, NULL, 0, &freeSpace, sizeof(freeSpace)) >= 0 && freeSpace > 0) {
-                u32 freeMB = (u32)(freeSpace / (1024 * 1024));
-                if (isMx4sio)
-                    snprintf(mxStatus, sizeof(mxStatus), "OK (%u MB livres)", freeMB);
-                else
-                    snprintf(usbStatus, sizeof(usbStatus), "OK (%u MB livres)", freeMB);
-            } else {
-                if (isMx4sio)
-                    snprintf(mxStatus, sizeof(mxStatus), "Conectado (%s)", devPath);
-                else
-                    snprintf(usbStatus, sizeof(usbStatus), "Conectado (%s)", devPath);
-            }
+        snprintf(devPath, sizeof(devPath), "mass%d:/", i);
+        dir = opendir(devPath);
+        if (dir != NULL) {
+            closedir(dir);
+            if (i == 0)
+                snprintf(usbStatus, sizeof(usbStatus), "Conectado (mass0:)");
+            else if (i == 1)
+                snprintf(mxStatus, sizeof(mxStatus), "Conectado (mass1:)");
         }
     }
 
     snprintf(diagTitle, sizeof(diagTitle), "OPL Diagnostic Display");
     snprintf(diagModel, sizeof(diagModel), "Particao OPL: %s", gOPLPart[0] != '\0' ? gOPLPart : "Nenhuma");
-    snprintf(diagRam, sizeof(diagRam), "USB (Pendrive): %s", usbStatus);
-    snprintf(diagStorage, sizeof(diagStorage), "MX4SIO (SD): %s", mxStatus);
+    snprintf(diagRam, sizeof(diagRam), "Dispositivo 1: %s", usbStatus);
+    snprintf(diagStorage, sizeof(diagStorage), "Dispositivo 2: %s", mxStatus);
 }
+
 
 
 void guiEnd()
