@@ -255,38 +255,6 @@ void updateDiagnostics(void)
 }
 
 
-    // Checa Memory Cards (Slot 1 e Slot 2)
-    int mc1 = 0, mc2 = 0;
-    DIR *d;
-    if ((d = opendir("mc0:/")) != NULL) { closedir(d); mc1 = 1; }
-    if ((d = opendir("mc1:/")) != NULL) { closedir(d); mc2 = 1; }
-
-    // Checa HD Interno (HDD)
-    int hasHdd = 0;
-    if ((d = opendir("hdd0:/")) != NULL) { closedir(d); hasHdd = 1; }
-
-    // Checa USB e MX4SIO (mass0 e mass1)
-    char usbStatus[64] = "Nao detectado";
-    char mxStatus[64] = "Nao detectado";
-    char devPath[16];
-    for (int i = 0; i < 4; i++) {
-        snprintf(devPath, sizeof(devPath), "mass%d:/", i);
-        if ((d = opendir(devPath)) != NULL) {
-            closedir(d);
-            if (i == 0)
-                snprintf(usbStatus, sizeof(usbStatus), "Conectado (mass0:)");
-            else if (i == 1)
-                snprintf(mxStatus, sizeof(mxStatus), "Conectado (mass1:)");
-        }
-    }
-
-    snprintf(diagTitle, sizeof(diagTitle), "OPL Diagnostic Display");
-    snprintf(diagBios, sizeof(diagBios), "BIOS PS2: %s (%s)", biosVer, regionStr);
-    snprintf(diagMc, sizeof(diagMc), "Memory Cards: Slot 1 [%s] | Slot 2 [%s]", mc1 ? "OK" : "--", mc2 ? "OK" : "--");
-    snprintf(diagModel, sizeof(diagModel), "OPL: %s | HDD: [%s]", gOPLPart[0] != '\0' ? gOPLPart : "N/A", hasHdd ? "OK" : "--");
-    snprintf(diagRam, sizeof(diagRam), "Dispositivo 1 (USB): %s", usbStatus);
-    snprintf(diagStorage, sizeof(diagStorage), "Dispositivo 2 (MX4SIO): %s", mxStatus);
-}
 
 
 
