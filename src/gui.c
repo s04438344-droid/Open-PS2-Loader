@@ -220,8 +220,8 @@ void updateDiagnostics(void)
     unsigned int secs = totalSec % 60;
         // Checa Memory Card 1, HDD e USB a cada 2 segundos (mantém a onda lisa)
     static int mc1 = 0, hasHdd = 0;
-    static char usbStatus = "Nao detectado";
-    static char mxStatus = "Nao detectado";
+    static char usbStatus[32] = "Nao detectado";
+    static char mxStatus[32] = "Nao detectado";
     static unsigned long lastCheck = 999999;
 
     if (lastCheck == 999999 || (totalSec - lastCheck) >= 2) {
@@ -234,7 +234,7 @@ void updateDiagnostics(void)
         if ((d = opendir("mc0:/")) != NULL) { closedir(d); mc1 = 1; }
         if ((d = opendir("hdd0:/")) != NULL) { closedir(d); hasHdd = 1; }
 
-        char devPath;
+        char devPath[16];
         for (int i = 0; i < 4; i++) {
             snprintf(devPath, sizeof(devPath), "mass%d:/", i);
             if ((d = opendir(devPath)) != NULL) {
