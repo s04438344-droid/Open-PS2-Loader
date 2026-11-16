@@ -166,7 +166,7 @@ static char diagModel[64];
 static char diagRam[64];
 static char diagStorage[64];
 
-static void updateDiagnostics(void)
+void updateDiagnostics(void)
 {
     snprintf(diagTitle, sizeof(diagTitle), "OPL Diagnostic Display");
     snprintf(diagModel, sizeof(diagModel), "Modelo: PS2 SCPH-90010");
@@ -1936,18 +1936,4 @@ void guiManageCheats(config_set_t *configSet)
     configWrite(configSet);
     sfxPlay(SFX_CONFIRM);
 }
-void menuRenderInfo(void)
-{
-    updateDiagnostics();
 
-    // Fundo escuro centralizado
-    rmDrawRect(50, 70, screenWidth - 100, screenHeight - 140, gColDarker);
-    rmDrawLine(50, 70, screenWidth - 50, 70, gColWhite);
-    rmDrawLine(50, screenHeight - 70, screenWidth - 50, screenHeight - 70, gColWhite);
-
-    // Título e informações de diagnóstico
-    fntRenderString(gTheme->fonts[0], screenWidth >> 1, 85, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
-    fntRenderString(gTheme->fonts[0], 70, 140, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
-    fntRenderString(gTheme->fonts[0], 70, 175, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
-    fntRenderString(gTheme->fonts[0], 70, 210, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
-}
