@@ -1940,22 +1940,14 @@ void menuRenderInfo(void)
 {
     updateDiagnostics();
 
-    theme_element_t *elem = gTheme->infoElems.first;
-    while (elem) {
-        if (elem->name) {
-            if (strcmp(elem->name, "#DIAG_TITLE") == 0)
-                elem->text = diagTitle;
-            else if (strcmp(elem->name, "#DIAG_MODEL") == 0)
-                elem->text = diagModel;
-            else if (strcmp(elem->name, "#DIAG_RAM") == 0)
-                elem->text = diagRam;
-            else if (strcmp(elem->name, "#DIAG_STORAGE") == 0)
-                elem->text = diagStorage;
-        }
+    // Fundo escuro centralizado
+    rmDrawRect(50, 70, screenWidth - 100, screenHeight - 140, gColDarker);
+    rmDrawLine(50, 70, screenWidth - 50, 70, gColWhite);
+    rmDrawLine(50, screenHeight - 70, screenWidth - 50, screenHeight - 70, gColWhite);
 
-        if (elem->drawElem) {
-            elem->drawElem(NULL, NULL, NULL, elem);
-        }
-        elem = elem->next;
-    }
+    // Título e informações de diagnóstico
+    fntRenderString(gTheme->fonts[0], screenWidth >> 1, 85, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
+    fntRenderString(gTheme->fonts[0], 70, 140, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], 70, 175, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], 70, 210, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
 }
