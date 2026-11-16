@@ -1307,15 +1307,7 @@ static void thmLoad(const char *themePath)
     else
         newT->fonts[0] = 0;
 
-    int i = 1, j;
-    snprintf(path, sizeof(path), "main0");
-    while (addGUIElem(themeConfig, themePath, newT, &newT->mainElems, NULL, path))
-        snprintf(path, sizeof(path), "main%d", i++);
-
-
-
-
-
+   
     int i = 1, j;
     snprintf(path, sizeof(path), "main0");
     while (addGUIElem(themePath, themeConfig, newT, &newT->mainElems, NULL, path))
