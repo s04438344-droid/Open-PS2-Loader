@@ -249,8 +249,9 @@ void updateDiagnostics(void)
 
     // Monta os text6os na tela de Informacoes
     snprintf(diagTitle, sizeof(diagTitle), "OPL Diagnostic Display");
-    snprintf(diagBios, sizeof(diagBios), "Console: %s | BIOS: %s (%s)", ps2Model, romverStr, regionStr);
-    snprintf(diagBoard, sizeof(diagBoard), "Data BIOS: %s | Ativo: %02u:%02u:%02u", biosDateStr, hrs, mins, secs);
+       snprintf(diagBios, sizeof(diagBios), "BIOS PS2: %.4s (%s)", romver, regionStr);
+    snprintf(diagBoard, sizeof(diagBoard), "Data BIOS: %.2s/%.2s/%.4s | Ativo: %02u:%02u:%02u", &romver[12], &romver[10], &romver[6], hrs, mins, secs);
+
     snprintf(diagMc, sizeof(diagMc), "P1[%s] P2[%s] | MC1[%s]", p1 ? "OK" : "--", p2 ? "OK" : "--", mc1 ? "OK" : "--");
     snprintf(diagModel, sizeof(diagModel), "OPL: %s | HDD: [%s]", OPL_VERSION, hasHdd ? "OK" : "--");
     snprintf(diagRam, sizeof(diagRam), "Dispositivo 1 (USB): %s", usbStatus);
