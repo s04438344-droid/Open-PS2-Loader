@@ -264,7 +264,8 @@ void updateDiagnostics(void)
 
     snprintf(diagBoard, sizeof(diagBoard), "Data BIOS: %s | Ativo: %02u:%02u:%02u", buildDate, hrs, mins, secs);
 
-    snprintf(diagMc, sizeof(diagMc), "P1[%s] P2[%s] | MC1[%s]", p1 ? "OK" : "--", p2 ? "OK" : "--", mc1 ? "OK" : "--");
+        snprintf(diagMc, sizeof(diagMc), "P1[%s] P2[%s] | MC1[%s] | Temp: %s", p1 ? "OK" : "--", p2 ? "OK" : "--", mc1 ? "OK" : "--", tempStr);
+
     snprintf(diagModel, sizeof(diagModel), "OPL: %s | HDD: [%s]", OPL_VERSION, hasHdd ? "OK" : "--");
     snprintf(diagRam, sizeof(diagRam), "Dispositivo 1 (USB): %s", usbStatus);
     snprintf(diagStorage, sizeof(diagStorage), "Dispositivo 2 (MX4SIO): %s", mxStatus);
