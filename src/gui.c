@@ -161,6 +161,19 @@ void guiInit(void)
         fadetbl[i] = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
     }
 }
+static char diagTitle[64];
+static char diagModel[64];
+static char diagRam[64];
+static char diagStorage[64];
+
+static void updateDiagnostics(void)
+{
+    snprintf(diagTitle, sizeof(diagTitle), "OPL Diagnostic Display");
+    snprintf(diagModel, sizeof(diagModel), "Modelo: PS2 SCPH-90010");
+    snprintf(diagRam, sizeof(diagRam), "Driver PS2: v3.11M / Kernel: 1.40");
+    snprintf(diagStorage, sizeof(diagStorage), "Particao: %s", gOPLPart[0] != '\0' ? gOPLPart : "Nao detectada");
+}
+
 
 void guiEnd()
 {
@@ -1922,4 +1935,28 @@ void guiManageCheats(config_set_t *configSet)
     cheatConfigSaveSelections(configSet);
     configWrite(configSet);
     sfxPlay(SFX_CONFIRM);
+}
+void menuRenderInfo(void)
+{
+    updateDiagnostics();
+
+    theme_element_t *elem = gTheme->infoElems.first;
+    while (elem) {
+        if (elem->extended && elem->type == ELEM_TYPE_ATTRIBUTE_TEXT) {
+            mutable_text_t *mutableText = (mutable_text_t *)elem->extended;
+            if (strcmp(mutableText->value, "#DIAG_TITLE") == 0)
+                mutableText->currentValue = diagTitle;
+            else if (strcmp(mutableText->value, "#DIAG_MODEL") == 0)
+                mutableText->currentValue = diagModel;
+            else if (strcmp(mutableText->value, "#DIAG_RAM") == 0)
+                mutableText->currentValue = diagRam;
+            else if (strcmp(mutableText->value, "#DIAG_STORAGE") == 0)
+                mutableText->currentValue = diagStorage;
+        }
+
+        if (elem->drawElem) {
+            elem->drawElem(NULL, NULL, NULL, elem);
+        }
+        elem = elem->next;
+    }
 }
