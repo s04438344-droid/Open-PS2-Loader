@@ -163,6 +163,7 @@ void guiInit(void)
 }
 char diagTitle[64];
 char diagBios[64];
+char diagBoard[ 64 ];
 char diagMc[64];
 char diagModel[64];
 char diagRam[128];
