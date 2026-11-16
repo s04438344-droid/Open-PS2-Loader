@@ -1942,16 +1942,16 @@ void menuRenderInfo(void)
 
     theme_element_t *elem = gTheme->infoElems.first;
     while (elem) {
-        if (elem->extended && elem->type == ELEM_TYPE_ATTRIBUTE_TEXT) {
-            mutable_text_t *mutableText = (mutable_text_t *)elem->extended;
-            if (strcmp(mutableText->value, "#DIAG_TITLE") == 0)
-                mutableText->currentValue = diagTitle;
-            else if (strcmp(mutableText->value, "#DIAG_MODEL") == 0)
-                mutableText->currentValue = diagModel;
-            else if (strcmp(mutableText->value, "#DIAG_RAM") == 0)
-                mutableText->currentValue = diagRam;
-            else if (strcmp(mutableText->value, "#DIAG_STORAGE") == 0)
-                mutableText->currentValue = diagStorage;
+        if (elem->extended) {
+            // Atualiza os valores baseados no ID ou texto do elemento do tema
+            if (strcmp(elem->name, "#DIAG_TITLE") == 0)
+                elem->text = diagTitle;
+            else if (strcmp(elem->name, "#DIAG_MODEL") == 0)
+                elem->text = diagModel;
+            else if (strcmp(elem->name, "#DIAG_RAM") == 0)
+                elem->text = diagRam;
+            else if (strcmp(elem->name, "#DIAG_STORAGE") == 0)
+                elem->text = diagStorage;
         }
 
         if (elem->drawElem) {
