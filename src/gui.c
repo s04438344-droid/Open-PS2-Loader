@@ -1942,8 +1942,7 @@ void menuRenderInfo(void)
 
     theme_element_t *elem = gTheme->infoElems.first;
     while (elem) {
-        if (elem->extended) {
-            // Atualiza os valores baseados no ID ou texto do elemento do tema
+        if (elem->name) {
             if (strcmp(elem->name, "#DIAG_TITLE") == 0)
                 elem->text = diagTitle;
             else if (strcmp(elem->name, "#DIAG_MODEL") == 0)
