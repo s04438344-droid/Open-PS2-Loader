@@ -1,7 +1,7 @@
 #include "include/cheatconfig.h"
 /*
  Copyright 2010, Volca
- Licenced under Academic Free License version 3.0
+ Licenced under Academic Free License versio5n 3.0
  Review OpenUsbLd README & LICENSE files for further details.
  */
 
