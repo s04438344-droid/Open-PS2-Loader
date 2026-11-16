@@ -1046,8 +1046,14 @@ extern void updateDiagnostics(void);
 extern char diagTitle[64], diagModel[64], diagRam[64], diagStorage[64];
 extern int screenWidth, screenHeight;
 
+extern void updateDiagnostics(void);
+extern char diagTitle, diagModel, diagRam, diagStorage;
+
 void menuRenderInfo(void)
 {
+    int screenWidth, screenHeight;
+    rmGetScreenExtents(&screenWidth, &screenHeight);
+
     updateDiagnostics();
 
     // Fundo escuro centralizado
@@ -1056,10 +1062,10 @@ void menuRenderInfo(void)
     rmDrawLine(50, screenHeight - 70, screenWidth - 50, screenHeight - 70, gColWhite);
 
     // Título e informações de diagnóstico
-    fntRenderString(gTheme->fonts[0], screenWidth >> 1, 85, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
-    fntRenderString(gTheme->fonts[0], 70, 140, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
-    fntRenderString(gTheme->fonts[0], 70, 175, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
-    fntRenderString(gTheme->fonts[0], 70, 210, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
+    fntRenderString(gTheme->fonts, screenWidth >> 1, 85, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
+    fntRenderString(gTheme->fonts, 70, 140, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
+    fntRenderString(gTheme->fonts, 70, 175, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
+    fntRenderString(gTheme->fonts, 70, 210, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
 }
 
 void menuHandleInputInfo()
