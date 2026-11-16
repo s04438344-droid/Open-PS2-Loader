@@ -1042,18 +1042,23 @@ void menuHandleInputMain()
             selected_item->item->execCross(selected_item->item);
     }
 }
+extern void updateDiagnostics(void);
+extern char diagTitle[64], diagModel[64], diagRam[64], diagStorage[64];
 
 void menuRenderInfo(void)
 {
-    item_list_t *list = selected_item->item->userdata;
+    updateDiagnostics();
 
-    if (list->mode == APP_MODE) {
-        menuRenderElements(gTheme->appsInfoElems.first);
-        gTheme->itemsList = gTheme->appsItemsList;
-    } else {
-        menuRenderElements(gTheme->infoElems.first);
-        gTheme->itemsList = gTheme->gamesItemsList;
-    }
+    // Fundo escuro centralizado
+    rmDrawRect(50, 70, screenWidth - 100, screenHeight - 140, gColDarker);
+    rmDrawLine(50, 70, screenWidth - 50, 70, gColWhite);
+    rmDrawLine(50, screenHeight - 70, screenWidth - 50, screenHeight - 70, gColWhite);
+
+    // Título e informações de diagnóstico
+    fntRenderString(gTheme->fonts[0], screenWidth >> 1, 85, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
+    fntRenderString(gTheme->fonts[0], 70, 140, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], 70, 175, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], 70, 210, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
 }
 
 void menuHandleInputInfo()
