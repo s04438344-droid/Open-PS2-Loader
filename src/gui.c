@@ -231,15 +231,15 @@ void updateDiagnostics(void)
         snprintf(mxStatus, sizeof(mxStatus), "Nao detectado");
 
         DIR *d;
-                int mcType = 0, mcFree = 0, mcFormat = 0, mcRet = 0;
+                        int mcType = 0, mcFree = 0, mcFormat = 0, mcRet = -99;
         mcGetInfo(0, 0, &mcType, &mcFree, &mcFormat);
         mcSync(0, NULL, &mcRet);
-        mc1 = (mcRet >= 0 && mcType == MC_TYPE_PS2) ? 1 : 0;
+        mc1 = ((mcRet == 0 || mcRet == -1) && mcType == MC_TYPE_PS2) ? 1 : 0;
 
-        mcType = 0; mcRet = 0;
+        mcType = 0; mcRet = -99;
         mcGetInfo(1, 0, &mcType, &mcFree, &mcFormat);
         mcSync(0, NULL, &mcRet);
-        mc2 = (mcRet >= 0 && mcType == MC_TYPE_PS2) ? 1 : 0;
+        mc2 = ((mcRet == 0 || mcRet == -1) && mcType == MC_TYPE_PS2) ? 1 : 0;
 
         if ((d = opendir("hdd0:/")) != NULL) { closedir(d); hasHdd = 1; }
 
