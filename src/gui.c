@@ -218,31 +218,36 @@ void updateDiagnostics(void)
     unsigned int hrs = totalSec / 3600;
     unsigned int mins = (totalSec % 3600) / 60;
     unsigned int secs = totalSec % 60;
+    // Checa Memory Cards, HDD e USB a cada 2 segundos (atualiza ao vivo sem travar a onda)
+    static int mc1 = 0, mc2 = 0, hasHdd = 0;
+    static char usbStatus[64] = "Nao detectado";
+    static char mxStatus[64] = "Nao detectado";
+    static unsigned long lastCheck = 999999;
 
-    // Checa Memory Cards (Slot 1 e Slot 2)
-    int mc1 = 0, mc2 = 0;
-    DIR *d;
-    if ((d = opendir("mc0:/")) != NULL) { closedir(d); mc1 = 1; }
-    if ((d = opendir("mc1:/")) != NULL) { closedir(d); mc2 = 1; }
+    if (lastCheck == 999999 || (totalSec - lastCheck) >= 2) {
+        lastCheck = totalSec;
+        mc1 = 0; mc2 = 0; hasHdd = 0;
+        snprintf(usbStatus, sizeof(usbStatus), "Nao detectado");
+        snprintf(mxStatus, sizeof(mxStatus), "Nao detectado");
 
-    // Checa HD Interno (HDD)
-    int hasHdd = 0;
-    if ((d = opendir("hdd0:/")) != NULL) { closedir(d); hasHdd = 1; }
+        DIR *d;
+        if ((d = opendir("mc0:/")) != NULL) { closedir(d); mc1 = 1; }
+        if ((d = opendir("mc1:/")) != NULL) { closedir(d); mc2 = 1; }
+        if ((d = opendir("hdd0:/")) != NULL) { closedir(d); hasHdd = 1; }
 
-    // Checa USB e MX4SIO (mass0 e mass1)
-    char usbStatus[ 64 ] = "Nao detectado";
-    char mxStatus[ 64 ] = "Nao detectado";
-    char devPath[ 16 ];
-    for (int i = 0; i < 4; i++) {
-        snprintf(devPath, sizeof(devPath), "mass%d:/", i);
-        if ((d = opendir(devPath)) != NULL) {
-            closedir(d);
-            if (i == 0)
-                snprintf(usbStatus, sizeof(usbStatus), "Conectado (mass0:)");
-            else if (i == 1)
-                snprintf(mxStatus, sizeof(mxStatus), "Conectado (mass1:)");
+        char devPath[16];
+        for (int i = 0; i < 4; i++) {
+            snprintf(devPath, sizeof(devPath), "mass%d:/", i);
+            if ((d = opendir(devPath)) != NULL) {
+                closedir(d);
+                if (i == 0)
+                    snprintf(usbStatus, sizeof(usbStatus), "Conectado (mass0:)");
+                else if (i == 1)
+                    snprintf(mxStatus, sizeof(mxStatus), "Conectado (mass1:)");
+            }
         }
     }
+
 
     snprintf(diagTitle, sizeof(diagTitle), "OPL Diagnostic Display");
     snprintf(diagBios, sizeof(diagBios), "Console: %s | BIOS: %s (%s)", consoleType, biosVer, regionStr);
