@@ -1043,7 +1043,7 @@ void menuHandleInputMain()
     }
 }
 extern void updateDiagnostics(void);
-extern char diagTitle[64], diagBios[64], diagMc[64], diagModel[64], diagRam[128], diagStorage[128];
+extern char diagTitle[ 64 ], diagBios[ 64 ], diagBoard[ 64 ], diagMc[ 64 ], diagModel[ 64 ], diagRam[ 128 ], diagStorage[ 128 ];
 
 void menuRenderInfo(void)
 {
@@ -1053,28 +1053,29 @@ void menuRenderInfo(void)
     updateDiagnostics();
 
     // Fundo escuro centralizado e bordas
-    rmDrawRect(40, 50, screenWidth - 80, screenHeight - 100, gColDarker);
-    rmDrawLine(40, 50, screenWidth - 40, 50, gColWhite);
-    rmDrawLine(40, 88, screenWidth - 40, 88, gColWhite);
-    rmDrawLine(40, screenHeight - 50, screenWidth - 40, screenHeight - 50, gColWhite);
+    rmDrawRect(35, 45, screenWidth - 70, screenHeight - 90, gColDarker);
+    rmDrawLine(35, 45, screenWidth - 35, 45, gColWhite);
+    rmDrawLine(35, 82, screenWidth - 35, 82, gColWhite);
+    rmDrawLine(35, screenHeight - 45, screenWidth - 35, screenHeight - 45, gColWhite);
 
     // Cabeçalho
-    fntRenderString(gTheme->fonts[0], screenWidth >> 1, 60, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
+    fntRenderString(gTheme->fonts[ 0 ], screenWidth >> 1, 55, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
 
-    // Seção 1: Hardware (BIOS e Memory Cards)
-    fntRenderString(gTheme->fonts[0], 60, 105, ALIGN_LEFT, 0, 0, diagBios, gTheme->textColor);
-    fntRenderString(gTheme->fonts[0], 60, 135, ALIGN_LEFT, 0, 0, diagMc, gTheme->textColor);
+    // Seção 1: Hardware, Data BIOS, Tempo Ativo, Controles e Memory Cards
+    fntRenderString(gTheme->fonts[ 0 ], 55, 98, ALIGN_LEFT, 0, 0, diagBios, gTheme->textColor);
+    fntRenderString(gTheme->fonts[ 0 ], 55, 126, ALIGN_LEFT, 0, 0, diagBoard, gTheme->textColor);
+    fntRenderString(gTheme->fonts[ 0 ], 55, 154, ALIGN_LEFT, 0, 0, diagMc, gTheme->textColor);
 
     // Linha divisória
-    rmDrawLine(60, 168, screenWidth - 60, 168, gColWhite);
+    rmDrawLine(55, 186, screenWidth - 55, 186, gColWhite);
 
     // Seção 2: Armazenamento (Partição OPL, HDD, USB, MX4SIO)
-    fntRenderString(gTheme->fonts[0], 60, 185, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
-    fntRenderString(gTheme->fonts[0], 60, 215, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
-    fntRenderString(gTheme->fonts[0], 60, 245, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
+    fntRenderString(gTheme->fonts[ 0 ], 55, 202, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
+    fntRenderString(gTheme->fonts[ 0 ], 55, 230, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
+    fntRenderString(gTheme->fonts[ 0 ], 55, 258, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
 
     // Rodapé
-    fntRenderString(gTheme->fonts[0], screenWidth >> 1, screenHeight - 78, ALIGN_CENTER, 0, 0, "[O] ou [Quadrado] Voltar", gTheme->selTextColor);
+    fntRenderString(gTheme->fonts[ 0 ], screenWidth >> 1, screenHeight - 72, ALIGN_CENTER, 0, 0, "[O] ou [Quadrado] Voltar", gTheme->selTextColor);
 }
 
 
