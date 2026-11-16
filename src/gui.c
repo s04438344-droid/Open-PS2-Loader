@@ -218,32 +218,23 @@ void updateDiagnostics(void)
     unsigned int hrs = totalSec / 3600;
     unsigned int mins = (totalSec % 3600) / 60;
     unsigned int secs = totalSec % 60;
-    // Checa Memory Cards, HDD e USB a cada 2 segundos (atualiza ao vivo sem travar a onda)
-    static int mc1 = 0, mc2 = 0, hasHdd = 0;
-    static char usbStatus[64] = "Nao detectado";
-    static char mxStatus[64] = "Nao detectado";
+        // Checa Memory Card 1, HDD e USB a cada 2 segundos (mantém a onda lisa)
+    static int mc1 = 0, hasHdd = 0;
+    static char usbStatus = "Nao detectado";
+    static char mxStatus = "Nao detectado";
     static unsigned long lastCheck = 999999;
 
     if (lastCheck == 999999 || (totalSec - lastCheck) >= 2) {
         lastCheck = totalSec;
-        mc1 = 0; mc2 = 0; hasHdd = 0;
+        mc1 = 0; hasHdd = 0;
         snprintf(usbStatus, sizeof(usbStatus), "Nao detectado");
         snprintf(mxStatus, sizeof(mxStatus), "Nao detectado");
 
         DIR *d;
-                        int mcType = 0, mcFree = 0, mcFormat = 0, mcRet = -99;
-        mcGetInfo(0, 0, &mcType, &mcFree, &mcFormat);
-        mcSync(0, NULL, &mcRet);
-        mc1 = ((mcRet == 0 || mcRet == -1) && mcType == MC_TYPE_PS2) ? 1 : 0;
-
-        mcType = 0; mcRet = -99;
-        mcGetInfo(1, 0, &mcType, &mcFree, &mcFormat);
-        mcSync(0, NULL, &mcRet);
-        mc2 = ((mcRet == 0 || mcRet == -1) && mcType == MC_TYPE_PS2) ? 1 : 0;
-
+        if ((d = opendir("mc0:/")) != NULL) { closedir(d); mc1 = 1; }
         if ((d = opendir("hdd0:/")) != NULL) { closedir(d); hasHdd = 1; }
 
-        char devPath[16];
+        char devPath;
         for (int i = 0; i < 4; i++) {
             snprintf(devPath, sizeof(devPath), "mass%d:/", i);
             if ((d = opendir(devPath)) != NULL) {
@@ -256,16 +247,16 @@ void updateDiagnostics(void)
         }
     }
 
-
+    // Monta os text6os na tela de Informacoes
     snprintf(diagTitle, sizeof(diagTitle), "OPL Diagnostic Display");
-    snprintf(diagBios, sizeof(diagBios), "Console: %s | BIOS: %s (%s)", consoleType, biosVer, regionStr);
-    snprintf(diagBoard, sizeof(diagBoard), "Data BIOS: %s | Ativo: %02u:%02u:%02u", buildDate, hrs, mins, secs);
-    snprintf(diagMc, sizeof(diagMc), "Controles: P1 [%s] P2 [%s] | MC: 1[%s] 2[%s]",
-             p1 ? "OK" : "--", p2 ? "OK" : "--", mc1 ? "OK" : "--", mc2 ? "OK" : "--");
-    snprintf(diagModel, sizeof(diagModel), "OPL: %s | HDD Interno: [%s]", gOPLPart[ 0 ] != '\0' ? gOPLPart : "N/A", hasHdd ? "OK" : "--");
+    snprintf(diagBios, sizeof(diagBios), "Console: %s | BIOS: %s (%s)", ps2Model, romverStr, regionStr);
+    snprintf(diagBoard, sizeof(diagBoard), "Data BIOS: %s | Ativo: %02u:%02u:%02u", biosDateStr, hrs, mins, secs);
+    snprintf(diagMc, sizeof(diagMc), "P1[%s] P2[%s] | MC1[%s]", p1 ? "OK" : "--", p2 ? "OK" : "--", mc1 ? "OK" : "--");
+    snprintf(diagModel, sizeof(diagModel), "OPL: %s | HDD: [%s]", OPL_VERSION, hasHdd ? "OK" : "--");
     snprintf(diagRam, sizeof(diagRam), "Dispositivo 1 (USB): %s", usbStatus);
     snprintf(diagStorage, sizeof(diagStorage), "Dispositivo 2 (MX4SIO): %s", mxStatus);
 }
+
 
 
 
