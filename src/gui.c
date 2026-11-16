@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <libvux.h>
 #include <libmc.h>
+#include <libcdvd.h>
 // Last Played Auto Start
 #include <time.h>
 
