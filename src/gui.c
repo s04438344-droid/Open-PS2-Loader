@@ -173,25 +173,87 @@ char diagStorage[128];
 
 void updateDiagnostics(void)
 {
-    char biosVer[32] = "Desconhecida";
-    char regionStr[16] = "N/A";
+    char biosVer[ 32 ] = "Desconhecida";
+    char regionStr[ 16 ] = "N/A";
+    char consoleType[ 32 ] = "Desconhecido";
+    char buildDate[ 16 ] = "--/--/----";
+
     FILE *f = fopen("rom0:ROMVER", "r");
     if (f != NULL) {
-        char romver[32];
+        char romver[ 32 ];
         memset(romver, 0, sizeof(romver));
-        if (fread(romver, 1, 14, f) >= 5) {
-            snprintf(biosVer, sizeof(biosVer), "v%c%c.%c%c", romver[0], romver[1], romver[2], romver[3]);
-            switch (romver[4]) {
+        if (fread(romver, 1, 14, f) >= 14) {
+            snprintf(biosVer, sizeof(biosVer), "v%c%c.%c%c", romver[ 0 ], romver[ 1 ], romver[ 2 ], romver[ 3 ]);
+
+            // Identifica FAT ou Slim pela versao da BIOS
+            if (romver[ 0 ] == '0' && romver[ 1 ] == '1')
+                strcpy(consoleType, "PS2 FAT");
+            else if (romver[ 0 ] == '0' && romver[ 1 ] == '2')
+                strcpy(consoleType, "PS2 Slim");
+
+            // Regiao
+            switch (romver[ 4 ]) {
                 case 'J': strcpy(regionStr, "JAP"); break;
                 case 'A': strcpy(regionStr, "USA"); break;
                 case 'E': strcpy(regionStr, "EUR"); break;
                 case 'H': strcpy(regionStr, "ASIA"); break;
                 case 'C': strcpy(regionStr, "CHN"); break;
-                default:  snprintf(regionStr, sizeof(regionStr), "%c", romver[4]); break;
+                default:  snprintf(regionStr, sizeof(regionStr), "%c", romver[ 4 ]); break;
             }
+
+            // Data de fabricacao da BIOS (DD/MM/AAAA)
+            snprintf(buildDate, sizeof(buildDate), "%c%c/%c%c/%c%c%c%c",
+                     romver[ 12 ], romver[ 13 ], romver[ 10 ], romver[ 11 ],
+                     romver[ 6 ], romver[ 7 ], romver[ 8 ], romver[ 9 ]);
         }
         fclose(f);
     }
+
+    // Checa Controles (Porta 1 e Porta 2)
+    int p1 = (padGetState(0, 0) == PAD_STATE_STABLE || padGetState(0, 0) == PAD_STATE_FINDCTP1);
+    int p2 = (padGetState(1, 0) == PAD_STATE_STABLE || padGetState(1, 0) == PAD_STATE_FINDCTP1);
+
+    // Tempo de atividade (Uptime)
+    unsigned long totalSec = (unsigned long)(clock() / CLOCKS_PER_SEC);
+    unsigned int hrs = totalSec / 3600;
+    unsigned int mins = (totalSec % 3600) / 60;
+    unsigned int secs = totalSec % 60;
+
+    // Checa Memory Cards (Slot 1 e Slot 2)
+    int mc1 = 0, mc2 = 0;
+    DIR *d;
+    if ((d = opendir("mc0:/")) != NULL) { closedir(d); mc1 = 1; }
+    if ((d = opendir("mc1:/")) != NULL) { closedir(d); mc2 = 1; }
+
+    // Checa HD Interno (HDD)
+    int hasHdd = 0;
+    if ((d = opendir("hdd0:/")) != NULL) { closedir(d); hasHdd = 1; }
+
+    // Checa USB e MX4SIO (mass0 e mass1)
+    char usbStatus[ 64 ] = "Nao detectado";
+    char mxStatus[ 64 ] = "Nao detectado";
+    char devPath[ 16 ];
+    for (int i = 0; i < 4; i++) {
+        snprintf(devPath, sizeof(devPath), "mass%d:/", i);
+        if ((d = opendir(devPath)) != NULL) {
+            closedir(d);
+            if (i == 0)
+                snprintf(usbStatus, sizeof(usbStatus), "Conectado (mass0:)");
+            else if (i == 1)
+                snprintf(mxStatus, sizeof(mxStatus), "Conectado (mass1:)");
+        }
+    }
+
+    snprintf(diagTitle, sizeof(diagTitle), "OPL Diagnostic Display");
+    snprintf(diagBios, sizeof(diagBios), "Console: %s | BIOS: %s (%s)", consoleType, biosVer, regionStr);
+    snprintf(diagBoard, sizeof(diagBoard), "Data BIOS: %s | Ativo: %02u:%02u:%02u", buildDate, hrs, mins, secs);
+    snprintf(diagMc, sizeof(diagMc), "Controles: P1 [%s] P2 [%s] | MC: 1[%s] 2[%s]",
+             p1 ? "OK" : "--", p2 ? "OK" : "--", mc1 ? "OK" : "--", mc2 ? "OK" : "--");
+    snprintf(diagModel, sizeof(diagModel), "OPL: %s | HDD Interno: [%s]", gOPLPart[ 0 ] != '\0' ? gOPLPart : "N/A", hasHdd ? "OK" : "--");
+    snprintf(diagRam, sizeof(diagRam), "Dispositivo 1 (USB): %s", usbStatus);
+    snprintf(diagStorage, sizeof(diagStorage), "Dispositivo 2 (MX4SIO): %s", mxStatus);
+}
+
 
     // Checa Memory Cards (Slot 1 e Slot 2)
     int mc1 = 0, mc2 = 0;
