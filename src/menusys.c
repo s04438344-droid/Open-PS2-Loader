@@ -1044,6 +1044,7 @@ void menuHandleInputMain()
 }
 extern void updateDiagnostics(void);
 extern char diagTitle[64], diagModel[64], diagRam[64], diagStorage[64];
+extern int screenWidth, screenHeight;
 
 void menuRenderInfo(void)
 {
