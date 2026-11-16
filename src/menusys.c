@@ -1062,10 +1062,12 @@ void menuRenderInfo(void)
     rmDrawLine(50, screenHeight - 70, screenWidth - 50, screenHeight - 70, gColWhite);
 
     // Título e informações de diagnóstico
-    fntRenderString(gTheme->fonts, screenWidth >> 1, 85, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
-    fntRenderString(gTheme->fonts, 70, 140, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
-    fntRenderString(gTheme->fonts, 70, 175, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
-    fntRenderString(gTheme->fonts, 70, 210, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
+        // T3ítulo e informações de diagnóstico
+    fntRenderString(gTheme->fonts[0], screenWidth >> 1, 85, ALIGN_CENTER, 0, 0, diagTitle, gTheme->selTextColor);
+    fntRenderString(gTheme->fonts[0], 70, 140, ALIGN_LEFT, 0, 0, diagModel, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], 70, 175, ALIGN_LEFT, 0, 0, diagRam, gTheme->textColor);
+    fntRenderString(gTheme->fonts[0], 70, 210, ALIGN_LEFT, 0, 0, diagStorage, gTheme->textColor);
+
 }
 
 void menuHandleInputInfo()
