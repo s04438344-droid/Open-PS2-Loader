@@ -161,10 +161,11 @@ void guiInit(void)
         fadetbl[i] = t * t * t * (t * (t * 6.0f - 15.0f) + 10.0f);
     }
 }
-static char diagTitle[64];
-static char diagModel[64];
-static char diagRam[64];
-static char diagStorage[64];
+char diagTitle[64];
+char diagModel[64];
+char diagRam[64];
+char diagStorage[64];
+
 
 void updateDiagnostics(void)
 {
