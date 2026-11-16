@@ -162,23 +162,54 @@ void guiInit(void)
     }
 }
 char diagTitle[64];
+char diagBios[64];
+char diagMc[64];
 char diagModel[64];
-char diagRam[64];
-char diagStorage[64];
+char diagRam[128];
+char diagStorage[128];
+;
 
 
 void updateDiagnostics(void)
 {
-    char usbStatus[32] = "Nao detectado";
-    char mxStatus[32] = "Nao detectado";
-    char devPath[16];
-    DIR *dir;
+    char biosVer[32] = "Desconhecida";
+    char regionStr[16] = "N/A";
+    FILE *f = fopen("rom0:ROMVER", "r");
+    if (f != NULL) {
+        char romver[32];
+        memset(romver, 0, sizeof(romver));
+        if (fread(romver, 1, 14, f) >= 5) {
+            snprintf(biosVer, sizeof(biosVer), "v%c%c.%c%c", romver[0], romver[1], romver[2], romver[3]);
+            switch (romver[4]) {
+                case 'J': strcpy(regionStr, "JAP"); break;
+                case 'A': strcpy(regionStr, "USA"); break;
+                case 'E': strcpy(regionStr, "EUR"); break;
+                case 'H': strcpy(regionStr, "ASIA"); break;
+                case 'C': strcpy(regionStr, "CHN"); break;
+                default:  snprintf(regionStr, sizeof(regionStr), "%c", romver[4]); break;
+            }
+        }
+        fclose(f);
+    }
 
+    // Checa Memory Cards (Slot 1 e Slot 2)
+    int mc1 = 0, mc2 = 0;
+    DIR *d;
+    if ((d = opendir("mc0:/")) != NULL) { closedir(d); mc1 = 1; }
+    if ((d = opendir("mc1:/")) != NULL) { closedir(d); mc2 = 1; }
+
+    // Checa HD Interno (HDD)
+    int hasHdd = 0;
+    if ((d = opendir("hdd0:/")) != NULL) { closedir(d); hasHdd = 1; }
+
+    // Checa USB e MX4SIO (mass0 e mass1)
+    char usbStatus[64] = "Nao detectado";
+    char mxStatus[64] = "Nao detectado";
+    char devPath[16];
     for (int i = 0; i < 4; i++) {
         snprintf(devPath, sizeof(devPath), "mass%d:/", i);
-        dir = opendir(devPath);
-        if (dir != NULL) {
-            closedir(dir);
+        if ((d = opendir(devPath)) != NULL) {
+            closedir(d);
             if (i == 0)
                 snprintf(usbStatus, sizeof(usbStatus), "Conectado (mass0:)");
             else if (i == 1)
@@ -187,10 +218,13 @@ void updateDiagnostics(void)
     }
 
     snprintf(diagTitle, sizeof(diagTitle), "OPL Diagnostic Display");
-    snprintf(diagModel, sizeof(diagModel), "Particao OPL: %s", gOPLPart[0] != '\0' ? gOPLPart : "Nenhuma");
-    snprintf(diagRam, sizeof(diagRam), "Dispositivo 1: %s", usbStatus);
-    snprintf(diagStorage, sizeof(diagStorage), "Dispositivo 2: %s", mxStatus);
+    snprintf(diagBios, sizeof(diagBios), "BIOS PS2: %s (%s)", biosVer, regionStr);
+    snprintf(diagMc, sizeof(diagMc), "Memory Cards: Slot 1 [%s] | Slot 2 [%s]", mc1 ? "OK" : "--", mc2 ? "OK" : "--");
+    snprintf(diagModel, sizeof(diagModel), "OPL: %s | HDD: [%s]", gOPLPart[0] != '\0' ? gOPLPart : "N/A", hasHdd ? "OK" : "--");
+    snprintf(diagRam, sizeof(diagRam), "Dispositivo 1 (USB): %s", usbStatus);
+    snprintf(diagStorage, sizeof(diagStorage), "Dispositivo 2 (MX4SIO): %s", mxStatus);
 }
+
 
 
 
