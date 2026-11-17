@@ -257,19 +257,20 @@ void updateDiagnostics(void)
             cdInited = 1;
         }
 
-                      // Diagnostico direto do Dragon Mechacon no SCPH-90010
+                             // Teste dos subcomandos termicos do Mechacon 07.06 (SCPH-90010)
         {
-            u64 buf1 = 0, buf2 = 0, buf3 = 0, buf4 = 0;
-            u8 *out1 = (u8 *)&buf1;
-            u8 *out2 = (u8 *)&buf3;
-            (void)buf2; (void)buf4;
-            u8 in0 = 0x00, in2 = 0x02;
-            int r0 = sceCdApplySCmd(0x03, &in0, 1, out1);
-            int r2 = sceCdApplySCmd(0x03, &in2, 1, out2);
+            u64 b1 = 0, b2 = 0, b3 = 0, b4 = 0;
+            u8 *o1 = (u8 *)&b1;
+            u8 *o2 = (u8 *)&b3;
+            (void)b2; (void)b4;
+            u8 c1 = 0x8E, c2 = 0x04;
+            int r1 = sceCdApplySCmd(0x03, &c1, 1, o1);
+            int r2 = sceCdApplySCmd(0x03, &c2, 1, o2);
             snprintf(tempStr, sizeof(tempStr), "%02X:%02X-%02X/%02X:%02X-%02X",
-                     r0 ? *out1 : 0xFF, *(out1 + 1), *(out1 + 2),
-                     r2 ? *out2 : 0xFF, *(out2 + 1), *(out2 + 2));
+                     r1 ? *o1 : 0xFF, *(o1 + 1), *(o1 + 2),
+                     r2 ? *o2 : 0xFF, *(o2 + 1), *(o2 + 2));
         }
+
 
 
 
