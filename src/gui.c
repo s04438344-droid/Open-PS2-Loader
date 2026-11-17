@@ -256,20 +256,28 @@ void updateDiagnostics(void)
             sceCdInit(SCECdINoD);
             cdInited = 1;
         }
-
-                             // Teste dos subcomandos termicos do Mechacon 07.06 (SCPH-90010)
+        // Identifica controle (DualShock 3 via PADEMU/USB em P1 ou P2)
         {
-            u64 b1 = 0, b2 = 0, b3 = 0, b4 = 0;
-            u8 *o1 = (u8 *)&b1;
-            u8 *o2 = (u8 *)&b3;
-            (void)b2; (void)b4;
-            u8 c1 = 0x8E, c2 = 0x04;
-            int r1 = sceCdApplySCmd(0x03, &c1, 1, o1);
-            int r2 = sceCdApplySCmd(0x03, &c2, 1, o2);
-            snprintf(tempStr, sizeof(tempStr), "%02X:%02X-%02X/%02X:%02X-%02X",
-                     r1 ? *o1 : 0xFF, *(o1 + 1), *(o1 + 2),
-                     r2 ? *o2 : 0xFF, *(o2 + 1), *(o2 + 2));
+            int mode1 = padInfoMode(0, 0, PAD_MODECURID, 0);
+            int mode2 = padInfoMode(1, 0, PAD_MODECURID, 0);
+            if (gEnablePadEmu) {
+                if ((gPadEmuSettings & 0xFF) == 1)
+                    snprintf(tempStr, sizeof(tempStr), "PS3 (P1)");
+                else if ((gPadEmuSettings & 0xFF) == 2)
+                    snprintf(tempStr, sizeof(tempStr), "PS3 (P2)");
+                else
+                    snprintf(tempStr, sizeof(tempStr), "PS3/USB");
+            } else if (p1 && p2) {
+                snprintf(tempStr, sizeof(tempStr), "P1+P2");
+            } else if (p1) {
+                snprintf(tempStr, sizeof(tempStr), mode1 == 7 ? "P1 (DS2)" : "P1 (Dig)");
+            } else if (p2) {
+                snprintf(tempStr, sizeof(tempStr), mode2 == 7 ? "P2 (DS2)" : "P2 (Dig)");
+            } else {
+                snprintf(tempStr, sizeof(tempStr), "--");
+            }
         }
+
 
 
 
@@ -281,7 +289,7 @@ void updateDiagnostics(void)
 
     snprintf(diagBoard, sizeof(diagBoard), "Data BIOS: %s | Ativo: %02u:%02u:%02u", buildDate, hrs, mins, secs);
 
-        snprintf(diagMc, sizeof(diagMc), "P1[%s] P2[%s] | MC1[%s] | Temp: %s", p1 ? "OK" : "--", p2 ? "OK" : "--", mc1 ? "OK" : "--", tempStr);
+           snprintf(diagMc, sizeof(diagMc), "P1[%s] P2[%s] | MC1[%s] | Ctrl: %s", p1 ? "OK" : "--", p2 ? "OK" : "--", mc1 ? "OK" : "--", tempStr);
 
     snprintf(diagModel, sizeof(diagModel), "OPL: %s | HDD: [%s]", OPL_VERSION, hasHdd ? "OK" : "--");
     snprintf(diagRam, sizeof(diagRam), "Dispositivo 1 (USB): %s", usbStatus);
