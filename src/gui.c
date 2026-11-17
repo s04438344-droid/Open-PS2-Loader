@@ -270,6 +270,7 @@ void updateDiagnostics(void)
     snprintf(diagRam, sizeof(diagRam), "Dispositivo 1 (USB): %s", usbStatus);
     snprintf(diagStorage, sizeof(diagStorage), "Dispositivo 2 (MX4SIO): %s", mxStatus);
 }
+}
 
 
 
