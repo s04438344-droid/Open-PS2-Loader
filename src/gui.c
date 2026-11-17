@@ -245,18 +245,17 @@ void updateDiagnostics(void)
                 else if (i == 1)
                     snprintf(mxStatus, sizeof(mxStatus), "Conectado (mass1:)");
             }
-         // Leitura de temperatura do Mechacon (PS2 Slim 7500x - 9000x)
-    char tempStr[16] = "N/A";
-    u8 sCmdOut[16];
-    u8 sCmdIn[2] = {0x02, 0x00};
+            // Leitura de temperatura do Mechacon (PS2 Slim 7500x - 9000x)
+    char tempStr(ABRE)16(FECHA) = "N/A";
+    u8 sCmdOut(ABRE)16(FECHA);
+    u8 sCmdIn(ABRE)2(FECHA) = {0x02, 0x00};
     memset(sCmdOut, 0, sizeof(sCmdOut));
     if (sceCdApplySCmd(0x03, sCmdIn, sizeof(sCmdIn), sCmdOut) != 0) {
-        if (sCmdOut[0] == 0 && sCmdOut[1] > 0 && sCmdOut[1] < 120) {
-            snprintf(tempStr, sizeof(tempStr), "%dC", sCmdOut[1]);
+        if (sCmdOut(ABRE)0(FECHA) == 0 && sCmdOut(ABRE)1(FECHA) > 0 && sCmdOut(ABRE)1(FECHA) < 120) {
+            snprintf(tempStr, sizeof(tempStr), "%dC", sCmdOut(ABRE)1(FECHA));
         }
     }
-   
-    }
+
 
     // Monta os text6os na tela de Informacoes
     snprintf(diagTitle, sizeof(diagTitle), "OPL Diagnostic Display");
