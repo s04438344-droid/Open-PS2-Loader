@@ -256,17 +256,19 @@ void updateDiagnostics(void)
             sceCdInit(SCECdINoD);
             cdInited = 1;
         }
-        // Identifica controle (DualShock 3 via PADEMU/USB em P1 ou P2)
+               // Verifica configuracao global do PADEMU (PS3/USB) ou controle fisico em P1/P2
         {
             int mode1 = padInfoMode(0, 0, PAD_MODECURID, 0);
             int mode2 = padInfoMode(1, 0, PAD_MODECURID, 0);
-            if (gEnablePadEmu) {
-                if ((gPadEmuSettings & 0xFF) == 1)
-                    snprintf(tempStr, sizeof(tempStr), "PS3 (P1)");
-                else if ((gPadEmuSettings & 0xFF) == 2)
-                    snprintf(tempStr, sizeof(tempStr), "PS3 (P2)");
+            int pademuMode = (gPadEmuSettings >> 8) & 0xFF;
+            int pademuPort = gPadEmuSettings & 0xFF;
+            if (pademuMode > 0) {
+                if (pademuPort == 1)
+                    snprintf(tempStr, sizeof(tempStr), "PADEMU P1");
+                else if (pademuPort == 2)
+                    snprintf(tempStr, sizeof(tempStr), "PADEMU P2");
                 else
-                    snprintf(tempStr, sizeof(tempStr), "PS3/USB");
+                    snprintf(tempStr, sizeof(tempStr), "PADEMU ON");
             } else if (p1 && p2) {
                 snprintf(tempStr, sizeof(tempStr), "P1+P2");
             } else if (p1) {
