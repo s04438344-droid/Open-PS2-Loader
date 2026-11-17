@@ -257,18 +257,18 @@ void updateDiagnostics(void)
             cdInited = 1;
         }
 
-        // Leitura de temperatura no SCPH-90010 (Dragon Mechacon)
+               // Leitura de temperatura no SCPH-90010 (Dragon Mechacon)
         u8 sCmdOut[16];
-        u8 sCmdIn[2] = {0x01, 0x00};
+        u8 sCmdIn[1] = {0x02};
         memset(sCmdOut, 0, sizeof(sCmdOut));
-        if (sceCdApplySCmd(0x03, sCmdIn, 1, sCmdOut) != 0 && *(sCmdOut) == 0 && *(sCmdOut + 1) > 0) {
-            snprintf(tempStr, sizeof(tempStr), "%dC", *(sCmdOut + 1));
-        } else {
-            memset(sCmdOut, 0, sizeof(sCmdOut));
-            if (sceCdApplySCmd(0x12, NULL, 0, sCmdOut) != 0 && *(sCmdOut) == 0 && *(sCmdOut + 1) > 0) {
-                snprintf(tempStr, sizeof(tempStr), "%dC", *(sCmdOut + 1));
-            }
+        if (sceCdApplySCmd(0x03, sCmdIn, 1, sCmdOut) != 0 && *(sCmdOut) == 0) {
+            int temp = *(sCmdOut + 1);
+            if (temp < 15 && *(sCmdOut + 2) >= 15)
+                temp = *(sCmdOut + 2);
+            if (temp >= 15 && temp < 120)
+                snprintf(tempStr, sizeof(tempStr), "%dC", temp);
         }
+
 
 
 
