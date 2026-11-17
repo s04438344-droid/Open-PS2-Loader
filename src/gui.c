@@ -250,16 +250,26 @@ void updateDiagnostics(void)
         }
     }
 
-                // Leitura de temperatura do Mechacon (PS2 Slim 7500x - 9000x)
-    char tempStr[16] = "N/A";
-    u8 sCmdOut[16];
-    u8 sCmdIn[2] = {0x02, 0x00};
-    memset(sCmdOut, 0, sizeof(sCmdOut));
-    if (sceCdApplySCmd(0x03, sCmdIn, sizeof(sCmdIn), sCmdOut) != 0) {
-        if (sCmdOut[0] == 0 && sCmdOut[1] > 0 && sCmdOut[1] < 120) {
-            snprintf(tempStr, sizeof(tempStr), "%dC", sCmdOut[1]);
+                        // Inicializa o Mechacon uma unica vez para liberar leitura de temperatura
+        static int cdInited = 0;
+        if (!cdInited) {
+            sceCdInit(SCECdINoD);
+            cdInited = 1;
         }
-    }
+
+        // Leitura de temperatura no SCPH-90010 (Dragon Mechacon)
+        u8 sCmdOut[16];
+        u8 sCmdIn[2] = {0x01, 0x00};
+        memset(sCmdOut, 0, sizeof(sCmdOut));
+        if (sceCdApplySCmd(0x03, sCmdIn, 1, sCmdOut) != 0 && *(sCmdOut) == 0 && *(sCmdOut + 1) > 0) {
+            snprintf(tempStr, sizeof(tempStr), "%dC", *(sCmdOut + 1));
+        } else {
+            memset(sCmdOut, 0, sizeof(sCmdOut));
+            if (sceCdApplySCmd(0x12, NULL, 0, sCmdOut) != 0 && *(sCmdOut) == 0 && *(sCmdOut + 1) > 0) {
+                snprintf(tempStr, sizeof(tempStr), "%dC", *(sCmdOut + 1));
+            }
+        }
+
 
 
 
