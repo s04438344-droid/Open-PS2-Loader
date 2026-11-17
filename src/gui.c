@@ -223,7 +223,7 @@ void updateDiagnostics(void)
     static int mc1 = 0, hasHdd = 0;
     static char usbStatus[32] = "Nao detectado";
     static char mxStatus[32] = "Nao detectado";
-    static char tempStr = "N/A";
+    static char tempStr[16] = "N/A";
     static unsigned long lastCheck = 999999;
 
     if (lastCheck == 999999 || (totalSec - lastCheck) >= 2) {
