@@ -244,7 +244,11 @@ void updateDiagnostics(void)
                     snprintf(usbStatus, sizeof(usbStatus), "Conectado (mass0:)");
                 else if (i == 1)
                     snprintf(mxStatus, sizeof(mxStatus), "Conectado (mass1:)");
-            }
+                
+                            }
+        }
+    }
+
                 // Leitura de temperatura do Mechacon (PS2 Slim 7500x - 9000x)
     char tempStr[16] = "N/A";
     u8 sCmdOut[16];
