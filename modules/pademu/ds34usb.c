@@ -62,7 +62,7 @@ static UsbDriver kbd_driver = {
     usb_disconnect
 };
 
-// Traduz os 8 bytes do teclado USB para os 18 bytes completos do DualShock 2 (Configuração KOF)
+// Traduz os 8 bytes do teclado USB para os 18 bytes completos do DualShock 2 (Configuração KOF + Saída IGR)
 static void traduzir_teclado(kbd_device_t *pad)
 {
     u8 *kbd_buf = (u8 *)&pad->kbd_buf_raw;
@@ -92,19 +92,30 @@ static void traduzir_teclado(kbd_device_t *pad)
             case 0x04: botoes &= ~(1 << 7); pad->press_left  = 0xFF; break; // A -> Esquerda
             case 0x07: botoes &= ~(1 << 5); pad->press_right = 0xFF; break; // D -> Direita
 
-            // Os 4 Botões de Ataque do KOF (Conforme a foto do teclado)
-            case 0x0F: botoes &= ~(1 << 15); pad->press_squ = 0xFF; break; // L            -> Quadrado (A - Soco Fraco)
-            case 0x33: botoes &= ~(1 << 14); pad->press_cro = 0xFF; break; // Ç            -> X (B - Chute Fraco)
-            case 0x36: botoes &= ~(1 << 12); pad->press_tri = 0xFF; break; // < , (Esq.)   -> Triângulo (C - Soco Forte)
-            case 0x37: botoes &= ~(1 << 13); pad->press_cir = 0xFF; break; // > . (Dir.)   -> Bola (D - Chute Forte)
+            // Os 4 Botões de Ataque do KOF
+            case 0x0F: botoes &= ~(1 << 15); pad->press_squ = 0xFF; break; // L          -> Quadrado (A - Soco Fraco)
+            case 0x33: botoes &= ~(1 << 14); pad->press_cro = 0xFF; break; // Ç          -> X (B - Chute Fraco)
+            case 0x36: botoes &= ~(1 << 12); pad->press_tri = 0xFF; break; // < , (Esq.) -> Triângulo (C - Soco Forte)
+            case 0x37: botoes &= ~(1 << 13); pad->press_cir = 0xFF; break; // > . (Dir.) -> Bola (D - Chute Forte)
 
-            // Atalhos Extras
-            case 0x2C: botoes &= ~(1 << 11); pad->press_r1  = 0xFF; break; // Espaço -> R1
-            case 0x0E: botoes &= ~(1 << 10); pad->press_l1  = 0xFF; break; // K      -> L1
+            // Os 4 Gatilhos (L1, L2, R1, R2)
+            case 0x0C: botoes &= ~(1 << 10); pad->press_l1 = 0xFF; break; // I -> L1
+            case 0x12: botoes &= ~(1 << 8);  pad->press_l2 = 0xFF; break; // O -> L2
+            case 0x13: botoes &= ~(1 << 11); pad->press_r1 = 0xFF; break; // P -> R1
+            case 0x0E: botoes &= ~(1 << 9);  pad->press_r2 = 0xFF; break; // K -> R2
 
             // Start e Select
             case 0x28: botoes &= ~(1 << 3); break;  // Enter     -> START
             case 0x2A: botoes &= ~(1 << 0); break;  // Backspace -> SELECT
+
+            // ATALHO DE SAÍDA DIRETA DO OPL (IGR: L1 + L2 + R1 + R2 + Start + Select na tecla ESC)
+            case 0x29:
+                botoes &= ~((1 << 10) | (1 << 8) | (1 << 11) | (1 << 9) | (1 << 3) | (1 << 0));
+                pad->press_l1 = 0xFF;
+                pad->press_l2 = 0xFF;
+                pad->press_r1 = 0xFF;
+                pad->press_r2 = 0xFF;
+                break;
         }
     }
 
