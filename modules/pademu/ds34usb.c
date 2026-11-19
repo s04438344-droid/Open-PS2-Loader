@@ -21,12 +21,29 @@ typedef struct _kbd_device {
     int interfaceNumber;
     int sema;
     u8 enabled;
-    u64 kbd_buf_raw;
-    u64 ps2_data_raw;
+    u8 kbd_buf_raw __attribute__((aligned(64)));
+    u8 ps2_data_0 __attribute__((aligned(64)));
+    u8 ps2_data_1;
+    u8 ps2_data_2;
+    u8 ps2_data_3;
+    u8 ps2_data_4;
+    u8 ps2_data_5;
+    u8 press_right;
+    u8 press_left;
+    u8 press_up;
+    u8 press_down;
+    u8 press_tri;
+    u8 press_cir;
+    u8 press_cro;
+    u8 press_squ;
+    u8 press_l1;
+    u8 press_r1;
+    u8 press_l2;
+    u8 press_r2;
 } kbd_device_t;
 
-static kbd_device_t kbd_pads_0;
-static kbd_device_t kbd_pads_1;
+static kbd_device_t kbd_pads_0 __attribute__((aligned(64)));
+static kbd_device_t kbd_pads_1 __attribute__((aligned(64)));
 
 static kbd_device_t *get_pad(int idx)
 {
@@ -45,11 +62,24 @@ static UsbDriver kbd_driver = {
     usb_disconnect
 };
 
-// Traduz os 8 bytes do teclado USB para os 6 bytes do DualShock 2 (Configuração KOF)
-static void traduzir_teclado(u8 *kbd_buf, u8 *ps2_data)
+// Traduz os 8 bytes do teclado USB para os 18 bytes completos do DualShock 2 (Configuração KOF)
+static void traduzir_teclado(kbd_device_t *pad)
 {
+    u8 *kbd_buf = (u8 *)&pad->kbd_buf_raw;
     u16 botoes = 0xFFFF; // 0xFFFF = todos os botões soltos
-    u8 lx = 0x7F, ly = 0x7F, rx = 0x7F, ry = 0x7F; // Analógicos centralizados
+
+    pad->press_right = 0;
+    pad->press_left  = 0;
+    pad->press_up    = 0;
+    pad->press_down  = 0;
+    pad->press_tri   = 0;
+    pad->press_cir   = 0;
+    pad->press_cro   = 0;
+    pad->press_squ   = 0;
+    pad->press_l1    = 0;
+    pad->press_r1    = 0;
+    pad->press_l2    = 0;
+    pad->press_r2    = 0;
 
     for (int i = 2; i < 8; i++) {
         u8 tecla = *(kbd_buf + i);
@@ -57,20 +87,20 @@ static void traduzir_teclado(u8 *kbd_buf, u8 *ps2_data)
 
         switch (tecla) {
             // Movimentação no D-Pad Digital (WASD)
-            case 0x1A: botoes &= ~(1 << 4); break; // W -> Cima
-            case 0x16: botoes &= ~(1 << 6); break; // S -> Baixo
-            case 0x04: botoes &= ~(1 << 7); break; // A -> Esquerda
-            case 0x07: botoes &= ~(1 << 5); break; // D -> Direita
+            case 0x1A: botoes &= ~(1 << 4); pad->press_up    = 0xFF; break; // W -> Cima
+            case 0x16: botoes &= ~(1 << 6); pad->press_down  = 0xFF; break; // S -> Baixo
+            case 0x04: botoes &= ~(1 << 7); pad->press_left  = 0xFF; break; // A -> Esquerda
+            case 0x07: botoes &= ~(1 << 5); pad->press_right = 0xFF; break; // D -> Direita
 
             // Os 4 Botões de Ataque do KOF
-            case 0x0F: botoes &= ~(1 << 15); break; // L             -> Quadrado (Soco Fraco)
-            case 0x33: botoes &= ~(1 << 14); break; // Ç             -> X (Chute Fraco)
-            case 0x50: botoes &= ~(1 << 12); break; // Seta Esquerda -> Triângulo (Soco Forte)
-            case 0x4F: botoes &= ~(1 << 13); break; // Seta Direita  -> Bola (Chute Forte)
+            case 0x0F: botoes &= ~(1 << 15); pad->press_squ = 0xFF; break; // L             -> Quadrado (Soco Fraco)
+            case 0x33: botoes &= ~(1 << 14); pad->press_cro = 0xFF; break; // Ç             -> X (Chute Fraco)
+            case 0x50: botoes &= ~(1 << 12); pad->press_tri = 0xFF; break; // Seta Esquerda -> Triângulo (Soco Forte)
+            case 0x4F: botoes &= ~(1 << 13); pad->press_cir = 0xFF; break; // Seta Direita  -> Bola (Chute Forte)
 
             // Atalhos Extras
-            case 0x2C: botoes &= ~(1 << 11); break; // Espaço -> R1
-            case 0x0E: botoes &= ~(1 << 10); break; // K      -> L1
+            case 0x2C: botoes &= ~(1 << 11); pad->press_r1  = 0xFF; break; // Espaço -> R1
+            case 0x0E: botoes &= ~(1 << 10); pad->press_l1  = 0xFF; break; // K      -> L1
 
             // Start e Select
             case 0x28: botoes &= ~(1 << 3); break;  // Enter     -> START
@@ -78,19 +108,19 @@ static void traduzir_teclado(u8 *kbd_buf, u8 *ps2_data)
         }
     }
 
-    *(ps2_data + 0) = botoes & 0xFF;
-    *(ps2_data + 1) = (botoes >> 8) & 0xFF;
-    *(ps2_data + 2) = rx;
-    *(ps2_data + 3) = ry;
-    *(ps2_data + 4) = lx;
-    *(ps2_data + 5) = ly;
+    pad->ps2_data_0 = botoes & 0xFF;
+    pad->ps2_data_1 = (botoes >> 8) & 0xFF;
+    pad->ps2_data_2 = 0x7F; // Analógico Direito X (Centro)
+    pad->ps2_data_3 = 0x7F; // Analógico Direito Y (Centro)
+    pad->ps2_data_4 = 0x7F; // Analógico Esquerdo X (Centro)
+    pad->ps2_data_5 = 0x7F; // Analógico Esquerdo Y (Centro)
 }
 
 static void usb_read_cb(int resultCode, int bytes, void *arg)
 {
     kbd_device_t *pad = (kbd_device_t *)arg;
     if (resultCode == USB_RC_OK && bytes >= 8) {
-        traduzir_teclado((u8 *)&pad->kbd_buf_raw, (u8 *)&pad->ps2_data_raw);
+        traduzir_teclado(pad);
     }
     SignalSema(pad->sema);
 }
@@ -105,6 +135,20 @@ static void kbd_poll(int pad_idx)
     }
 }
 
+static UsbInterfaceDescriptor *find_kbd_interface(int devId, UsbConfigDescriptor *conf)
+{
+    UsbInterfaceDescriptor *intf = (UsbInterfaceDescriptor *)UsbGetDeviceStaticDescriptor(devId, conf, USB_DT_INTERFACE);
+    while (intf != NULL) {
+        if (intf->bInterfaceClass == USB_CLASS_HID &&
+            intf->bInterfaceSubClass == USB_SUBCLASS_BOOT &&
+            intf->bInterfaceProtocol == USB_PROTOCOL_KEYBOARD) {
+            return intf;
+        }
+        intf = (UsbInterfaceDescriptor *)UsbGetDeviceStaticDescriptor(devId, intf, USB_DT_INTERFACE);
+    }
+    return NULL;
+}
+
 int usb_probe(int devId)
 {
     UsbDeviceDescriptor *dev = (UsbDeviceDescriptor *)UsbGetDeviceStaticDescriptor(devId, NULL, USB_DT_DEVICE);
@@ -113,12 +157,7 @@ int usb_probe(int devId)
     UsbConfigDescriptor *conf = (UsbConfigDescriptor *)UsbGetDeviceStaticDescriptor(devId, dev, USB_DT_CONFIG);
     if (!conf) return 0;
 
-    UsbInterfaceDescriptor *intf = (UsbInterfaceDescriptor *)UsbGetDeviceStaticDescriptor(devId, conf, USB_DT_INTERFACE);
-    if (!intf) return 0;
-
-    if (intf->bInterfaceClass == USB_CLASS_HID &&
-        intf->bInterfaceSubClass == USB_SUBCLASS_BOOT &&
-        intf->bInterfaceProtocol == USB_PROTOCOL_KEYBOARD) {
+    if (find_kbd_interface(devId, conf) != NULL) {
         return 1;
     }
 
@@ -138,9 +177,17 @@ int usb_connect(int devId)
 
     UsbDeviceDescriptor *dev = (UsbDeviceDescriptor *)UsbGetDeviceStaticDescriptor(devId, NULL, USB_DT_DEVICE);
     UsbConfigDescriptor *conf = (UsbConfigDescriptor *)UsbGetDeviceStaticDescriptor(devId, dev, USB_DT_CONFIG);
-    UsbInterfaceDescriptor *intf = (UsbInterfaceDescriptor *)UsbGetDeviceStaticDescriptor(devId, conf, USB_DT_INTERFACE);
-    UsbEndpointDescriptor *endp = (UsbEndpointDescriptor *)UsbGetDeviceStaticDescriptor(devId, intf, USB_DT_ENDPOINT);
+    UsbInterfaceDescriptor *intf = find_kbd_interface(devId, conf);
+    if (!intf) return -1;
 
+    UsbEndpointDescriptor *endp = (UsbEndpointDescriptor *)UsbGetDeviceStaticDescriptor(devId, intf, USB_DT_ENDPOINT);
+    while (endp != NULL) {
+        if ((endp->bEndpointAddress & USB_ENDPOINT_DIR_MASK) == USB_DIR_IN &&
+            (endp->bmAttributes & USB_ENDPOINT_XFERTYPE_MASK) == USB_ENDPOINT_XFER_INT) {
+            break;
+        }
+        endp = (UsbEndpointDescriptor *)UsbGetDeviceStaticDescriptor(devId, endp, USB_DT_ENDPOINT);
+    }
     if (!endp) return -1;
 
     kbd_device_t *pad = get_pad(pad_idx);
@@ -150,9 +197,8 @@ int usb_connect(int devId)
     pad->interruptEndp = UsbOpenEndpoint(devId, endp);
 
     pad->kbd_buf_raw = 0;
-    traduzir_teclado((u8 *)&pad->kbd_buf_raw, (u8 *)&pad->ps2_data_raw);
+    traduzir_teclado(pad);
 
-    // Ativa a configuração USB e força o Boot Protocol (8 bytes)
     UsbSetDeviceConfiguration(pad->controlEndp, conf->bConfigurationValue, NULL, NULL);
     UsbControlTransfer(pad->controlEndp, 0x21, 0x0B, 0x0000, pad->interfaceNumber, 0, NULL, NULL, NULL);
 
@@ -197,7 +243,7 @@ int ds34usb_init(u8 pads, u8 options)
         pad->enabled = 0;
         pad->sema = CreateSema(&sema);
         pad->kbd_buf_raw = 0;
-        traduzir_teclado((u8 *)&pad->kbd_buf_raw, (u8 *)&pad->ps2_data_raw);
+        traduzir_teclado(pad);
     }
 
     if (UsbRegisterDriver(&kbd_driver) != USB_RC_OK) {
@@ -208,13 +254,15 @@ int ds34usb_init(u8 pads, u8 options)
 
 int ds34usb_get_status(int port)
 {
-    if (port >= MAX_PADS) return 0;
-    return get_pad(port)->enabled ? 1 : 0;
+    if (port >= MAX_PADS) return DS34USB_STATE_DISCONNECTED;
+    // CORREÇÃO CRÍTICA: Retorna DS34USB_STATE_RUNNING (0x08) conforme exigido pelo ds34usb.h!
+    return get_pad(port)->enabled ? DS34USB_STATE_RUNNING : DS34USB_STATE_DISCONNECTED;
 }
 
 int ds34usb_get_model(int port)
 {
-    return 0;
+    // CORREÇÃO CRÍTICA: Retorna MODEL_PS2 (3) conforme definido no ds34usb.h!
+    return MODEL_PS2;
 }
 
 int ds34usb_get_data(u8 *dst, int size, int port)
@@ -223,17 +271,18 @@ int ds34usb_get_data(u8 *dst, int size, int port)
 
     kbd_poll(port);
 
-    u8 *src = (u8 *)&get_pad(port)->ps2_data_raw;
-    int copy_size = (size < 6) ? size : 6;
+    kbd_device_t *pad = get_pad(port);
+    u8 *src = &pad->ps2_data_0;
+    int copy_size = (size < 18) ? size : 18;
     for (int i = 0; i < copy_size; i++) {
         *(dst + i) = *(src + i);
     }
-    return copy_size;
+    return 1;
 }
 
-void ds34usb_set_rumble(u8 lrum, u8 rrum, int port) { /* Teclado não tem vibração */ }
-void ds34usb_set_mode(int mode, int lock, int port) { /* Modo fixo digital/analógico */ }
-void ds34usb_reset(void)
+void ds34usb_set_rumble(u8 lrum, u8 rrum, int port) { }
+void ds34usb_set_mode(int mode, int lock, int port) { }
+void ds34usb_reset()
 {
     for (int i = 0; i < MAX_PADS; i++) {
         kbd_device_t *pad = get_pad(i);
