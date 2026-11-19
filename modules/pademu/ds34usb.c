@@ -9,7 +9,6 @@
 #include "thsemap.h"
 #include "ds34usb.h"
 
-#define USB_CLASS_HID         0x03
 #define USB_SUBCLASS_BOOT     0x01
 #define USB_PROTOCOL_KEYBOARD 0x01
 
@@ -22,11 +21,17 @@ typedef struct _kbd_device {
     int interfaceNumber;
     int sema;
     u8 enabled;
-    u8 kbd_buf[8];
-    u8 ps2_data[6];
+    u64 kbd_buf_raw;
+    u64 ps2_data_raw;
 } kbd_device_t;
 
-static kbd_device_t kbd_pads[MAX_PADS];
+static kbd_device_t kbd_pads_0;
+static kbd_device_t kbd_pads_1;
+
+static kbd_device_t *get_pad(int idx)
+{
+    return (idx == 0) ? &kbd_pads_0 : &kbd_pads_1;
+}
 
 int usb_probe(int devId);
 int usb_connect(int devId);
@@ -85,18 +90,18 @@ static void usb_read_cb(int resultCode, int bytes, void *arg)
 {
     kbd_device_t *pad = (kbd_device_t *)arg;
     if (resultCode == USB_RC_OK && bytes >= 8) {
-        traduzir_teclado(pad->kbd_buf, pad->ps2_data);
+        traduzir_teclado((u8 *)&pad->kbd_buf_raw, (u8 *)&pad->ps2_data_raw);
     }
     SignalSema(pad->sema);
 }
 
 static void kbd_poll(int pad_idx)
 {
-    kbd_device_t *pad = &kbd_pads[pad_idx];
+    kbd_device_t *pad = get_pad(pad_idx);
     if (!pad->enabled || pad->interruptEndp < 0) return;
 
     if (PollSema(pad->sema) == 0) {
-        UsbInterruptTransfer(pad->interruptEndp, pad->kbd_buf, 8, usb_read_cb, pad);
+        UsbInterruptTransfer(pad->interruptEndp, (u8 *)&pad->kbd_buf_raw, 8, usb_read_cb, pad);
     }
 }
 
@@ -124,7 +129,7 @@ int usb_connect(int devId)
 {
     int pad_idx = -1;
     for (int i = 0; i < MAX_PADS; i++) {
-        if (kbd_pads[i].devId == -1) {
+        if (get_pad(i)->devId == -1) {
             pad_idx = i;
             break;
         }
@@ -138,15 +143,14 @@ int usb_connect(int devId)
 
     if (!endp) return -1;
 
-    kbd_device_t *pad = &kbd_pads[pad_idx];
+    kbd_device_t *pad = get_pad(pad_idx);
     pad->devId = devId;
     pad->interfaceNumber = intf->bInterfaceNumber;
     pad->controlEndp = UsbOpenEndpoint(devId, NULL);
     pad->interruptEndp = UsbOpenEndpoint(devId, endp);
 
-    // Zera estado inicial do controle (tudo solto)
-    memset(pad->kbd_buf, 0, 8);
-    traduzir_teclado(pad->kbd_buf, pad->ps2_data);
+    pad->kbd_buf_raw = 0;
+    traduzir_teclado((u8 *)&pad->kbd_buf_raw, (u8 *)&pad->ps2_data_raw);
 
     // Ativa a configuração USB e força o Boot Protocol (8 bytes)
     UsbSetDeviceConfiguration(pad->controlEndp, conf->bConfigurationValue, NULL, NULL);
@@ -161,13 +165,14 @@ int usb_connect(int devId)
 int usb_disconnect(int devId)
 {
     for (int i = 0; i < MAX_PADS; i++) {
-        if (kbd_pads[i].devId == devId) {
-            kbd_pads[i].enabled = 0;
-            kbd_pads[i].devId = -1;
-            if (kbd_pads[i].interruptEndp >= 0) UsbCloseEndpoint(kbd_pads[i].interruptEndp);
-            if (kbd_pads[i].controlEndp >= 0) UsbCloseEndpoint(kbd_pads[i].controlEndp);
-            kbd_pads[i].interruptEndp = -1;
-            kbd_pads[i].controlEndp = -1;
+        kbd_device_t *pad = get_pad(i);
+        if (pad->devId == devId) {
+            pad->enabled = 0;
+            pad->devId = -1;
+            if (pad->interruptEndp >= 0) UsbCloseEndpoint(pad->interruptEndp);
+            if (pad->controlEndp >= 0) UsbCloseEndpoint(pad->controlEndp);
+            pad->interruptEndp = -1;
+            pad->controlEndp = -1;
             break;
         }
     }
@@ -185,13 +190,14 @@ int ds34usb_init(u8 pads, u8 options)
     sema.option = 0;
 
     for (int i = 0; i < MAX_PADS; i++) {
-        kbd_pads[i].devId = -1;
-        kbd_pads[i].controlEndp = -1;
-        kbd_pads[i].interruptEndp = -1;
-        kbd_pads[i].enabled = 0;
-        kbd_pads[i].sema = CreateSema(&sema);
-        memset(kbd_pads[i].kbd_buf, 0, 8);
-        traduzir_teclado(kbd_pads[i].kbd_buf, kbd_pads[i].ps2_data);
+        kbd_device_t *pad = get_pad(i);
+        pad->devId = -1;
+        pad->controlEndp = -1;
+        pad->interruptEndp = -1;
+        pad->enabled = 0;
+        pad->sema = CreateSema(&sema);
+        pad->kbd_buf_raw = 0;
+        traduzir_teclado((u8 *)&pad->kbd_buf_raw, (u8 *)&pad->ps2_data_raw);
     }
 
     if (UsbRegisterDriver(&kbd_driver) != USB_RC_OK) {
@@ -203,17 +209,25 @@ int ds34usb_init(u8 pads, u8 options)
 int ds34usb_get_status(int port)
 {
     if (port >= MAX_PADS) return 0;
-    return kbd_pads[port].enabled ? 1 : 0;
+    return get_pad(port)->enabled ? 1 : 0;
+}
+
+int ds34usb_get_model(int port)
+{
+    return 0;
 }
 
 int ds34usb_get_data(u8 *dst, int size, int port)
 {
-    if (port >= MAX_PADS || !kbd_pads[port].enabled) return 0;
+    if (port >= MAX_PADS || !get_pad(port)->enabled) return 0;
 
     kbd_poll(port);
 
+    u8 *src = (u8 *)&get_pad(port)->ps2_data_raw;
     int copy_size = (size < 6) ? size : 6;
-    memcpy(dst, kbd_pads[port].ps2_data, copy_size);
+    for (int i = 0; i < copy_size; i++) {
+        *(dst + i) = *(src + i);
+    }
     return copy_size;
 }
 
@@ -222,8 +236,9 @@ void ds34usb_set_mode(int mode, int lock, int port) { /* Modo fixo digital/anal�
 void ds34usb_reset(void)
 {
     for (int i = 0; i < MAX_PADS; i++) {
-        if (kbd_pads[i].devId != -1) {
-            usb_disconnect(kbd_pads[i].devId);
+        kbd_device_t *pad = get_pad(i);
+        if (pad->devId != -1) {
+            usb_disconnect(pad->devId);
         }
     }
 }
