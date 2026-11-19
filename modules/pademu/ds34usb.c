@@ -92,11 +92,11 @@ static void traduzir_teclado(kbd_device_t *pad)
             case 0x04: botoes &= ~(1 << 7); pad->press_left  = 0xFF; break; // A -> Esquerda
             case 0x07: botoes &= ~(1 << 5); pad->press_right = 0xFF; break; // D -> Direita
 
-            // Os 4 Botões de Ataque do KOF
-            case 0x0F: botoes &= ~(1 << 15); pad->press_squ = 0xFF; break; // L             -> Quadrado (Soco Fraco)
-            case 0x33: botoes &= ~(1 << 14); pad->press_cro = 0xFF; break; // Ç             -> X (Chute Fraco)
-            case 0x50: botoes &= ~(1 << 12); pad->press_tri = 0xFF; break; // Seta Esquerda -> Triângulo (Soco Forte)
-            case 0x4F: botoes &= ~(1 << 13); pad->press_cir = 0xFF; break; // Seta Direita  -> Bola (Chute Forte)
+            // Os 4 Botões de Ataque do KOF (Conforme a foto do teclado)
+            case 0x0F: botoes &= ~(1 << 15); pad->press_squ = 0xFF; break; // L            -> Quadrado (A - Soco Fraco)
+            case 0x33: botoes &= ~(1 << 14); pad->press_cro = 0xFF; break; // Ç            -> X (B - Chute Fraco)
+            case 0x36: botoes &= ~(1 << 12); pad->press_tri = 0xFF; break; // < , (Esq.)   -> Triângulo (C - Soco Forte)
+            case 0x37: botoes &= ~(1 << 13); pad->press_cir = 0xFF; break; // > . (Dir.)   -> Bola (D - Chute Forte)
 
             // Atalhos Extras
             case 0x2C: botoes &= ~(1 << 11); pad->press_r1  = 0xFF; break; // Espaço -> R1
@@ -255,13 +255,11 @@ int ds34usb_init(u8 pads, u8 options)
 int ds34usb_get_status(int port)
 {
     if (port >= MAX_PADS) return DS34USB_STATE_DISCONNECTED;
-    // CORREÇÃO CRÍTICA: Retorna DS34USB_STATE_RUNNING (0x08) conforme exigido pelo ds34usb.h!
     return get_pad(port)->enabled ? DS34USB_STATE_RUNNING : DS34USB_STATE_DISCONNECTED;
 }
 
 int ds34usb_get_model(int port)
 {
-    // CORREÇÃO CRÍTICA: Retorna MODEL_PS2 (3) conforme definido no ds34usb.h!
     return MODEL_PS2;
 }
 
