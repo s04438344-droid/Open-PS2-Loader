@@ -7,6 +7,9 @@
 #include <stdio.h>
 #include <kernel.h>
 #include <math.h>
+#include <stdlib.h>
+#include <time.h>
+
 
 #include "include/opl.h"
 #include "include/renderman.h"
@@ -394,69 +397,128 @@ void rmDrawRect(int x, int y, int w, int h, u64 color)
     order++;
 }
 
-void rmDrawPlasma(void)
-{
-    static unsigned int phase = 0;
-    static unsigned int timer = 0;
-    static const int sin_table[] = {
-        0, 3, 6, 9, 12, 15, 18, 21, 24, 26, 28, 30, 31, 32, 32, 32,
-        31, 30, 28, 26, 24, 21, 18, 15, 12, 9, 6, 3, 0, -3, -6, -9,
-        -12, -15, -18, -21, -24, -26, -28, -30, -31, -32, -32, -32,
-        -31, -30, -28, -26, -24, -21, -18, -15, -12, -9, -6, -3,
-        -2, -1, 0, 1, 2, 1, 0, -1
-    };
-    int x, y;
-    int intensity, r, g, b, w1, w2, w3, combined, crest;
-    u64 color;
+typedef struct {
+    int ativo;
+    int tipo;            // 0 = Grito silencioso, 1 = Sorriso largo, 2 = Só olhos
+    float x, y;          // Posição central (escala virtual 640x480)
+    float escala;        // Tamanho aleatório
+    int timer;           // Contador de frames
+    int duracao;         // Duração total da aparição
+    float aberturaBoca;  // Abertura vertical da boca
+    float distOlhos;     // Distância entre os olhos
+} RostoHorror;
 
-    timer++;
-    if (timer >= 4)
-    {
-        phase++;
-        timer = 0;
-    }
+static RostoHorror rosto = {0};
+static int sementeHorrorIniciada = 0;
 
-    for (y = 0; y < 60; y++)
-    {
-        int y_base = y * 2;
-        for (x = 0; x < 80; x++)
-        {
-            w1 = sin_table[(x + phase) & 63];
-            w2 = sin_table[(y_base + (sin_table[((x >> 1) + phase) & 63] >> 1)) & 63];
-            w3 = sin_table[(x + y + phase + 16) & 63];
+static void desenharArcoHorror(float cx, float cy, float rx, float ry, float angIni, float angFim, int segmentos, u64 cor) {
+    float passo = (angFim - angIni) / segmentos;
+    for (int i = 0; i < segmentos; i++) {
+        float a1 = angIni + i * passo;
+        float a2 = a1 + passo;
+        int x1 = (int)(cx + cosf(a1) * rx);
+        int y1 = (int)(cy + sinf(a1) * ry);
+        int x2 = (int)(cx + cosf(a2) * rx);
+        int y2 = (int)(cy + sinf(a2) * ry);
 
-            combined = ((w1 + w2 + w3 + 96) * 340) >> 8;
-            if (combined > 255) combined = 255;
-            if (combined < 0) combined = 0;
-
-            crest = (combined + ((combined * combined) >> 8)) >> 1;
-
-            // Calcula o brilho (0 = preto nos vales, até 175 no pico)
-            intensity = (crest * 175) >> 8;
-
-            // Aplica o brilho sobre a Background Color atual do OPL
-            if (gTheme) {
-                r = (*(gTheme->bgColor + 0) * intensity) >> 8;
-                g = (*(gTheme->bgColor + 1) * intensity) >> 8;
-                b = (*(gTheme->bgColor + 2) * intensity) >> 8;
-            } else {
-                r = intensity;
-                g = 0;
-                b = 0;
-            }
-
-            color = GS_SETREG_RGBA(r, g, b, 0x80);
-
-            rmDrawRect(
-                x * 8,
-                y * 8,
-                9,
-                9,
-                color
-            );
-        }
+        rmDrawLine(x1, y1, x2, y2, cor);
+        rmDrawLine(x1 + 1, y1 + 1, x2 + 1, y2 + 1, cor);
     }
 }
+
+void rmDrawPlasma(void)
+{
+    int bgR = 120, bgG = 120, bgB = 120;
+
+    if (!sementeHorrorIniciada) {
+        srand((unsigned int)clock());
+        sementeHorrorIniciada = 1;
+    }
+
+    // Puxa a cor dinâmica do tema atual do OPL
+    if (gTheme) {
+        bgR = *(gTheme->bgColor + 0);
+        bgG = *(gTheme->bgColor + 1);
+        bgB = *(gTheme->bgColor + 2);
+    }
+
+    // 1. Fundo bem escuro com reflexo sutil da cor selecionada
+    rmDrawRect(0, 0, 640, 480, GS_SETREG_RGBA(bgR / 10, bgG / 10, bgB / 10, 0x80));
+
+    // 2. Poeira / estática leve flutuando no escuro
+    int pR = (bgR + 100 > 255) ? 255 : bgR + 100;
+    int pG = (bgG + 100 > 255) ? 255 : bgG + 100;
+    int pB = (bgB + 100 > 255) ? 255 : bgB + 100;
+    u64 corPoeira = GS_SETREG_RGBA(pR, pG, pB, 0x28);
+
+    for (int i = 0; i < 30; i++) {
+        int px = rand() % 640;
+        int py = rand() % 480;
+        rmDrawRect(px, py, 2, 2, corPoeira);
+    }
+
+    // 3. Sorteia uma nova aparição se não houver nenhuma ativa
+    if (!rosto.ativo) {
+        if ((rand() % 450) == 0) {
+            rosto.ativo = 1;
+            rosto.tipo = rand() % 3;
+            rosto.timer = 0;
+            rosto.duracao = 150 + (rand() % 120);
+            rosto.x = 120.0f + (rand() % 400);
+            rosto.y = 100.0f + (rand() % 280);
+            rosto.escala = 0.85f + ((rand() % 65) / 100.0f);
+            rosto.aberturaBoca = 12.0f + (rand() % 18);
+            rosto.distOlhos = 22.0f + (rand() % 14);
+        }
+        return;
+    }
+
+    // 4. Fade-In e Fade-Out suave
+    rosto.timer++;
+    if (rosto.timer >= rosto.duracao) {
+        rosto.ativo = 0;
+        return;
+    }
+
+    float progresso = (float)rosto.timer / (float)rosto.duracao;
+    float intensidade = sinf(progresso * 3.14159f);
+    int alpha = (int)(intensidade * 105.0f);
+
+    // Tremor analógico sutil
+    float cx = rosto.x + (((rand() % 5) - 2) * 0.7f);
+    float cy = rosto.y + (((rand() % 5) - 2) * 0.7f);
+    float s = rosto.escala;
+
+    // Cor do traço acompanhando a cor dinâmica do seu tema
+    int tracoR = (bgR + 140 > 255) ? 255 : bgR + 140;
+    int tracoG = (bgG + 140 > 255) ? 255 : bgG + 140;
+    int tracoB = (bgB + 140 > 255) ? 255 : bgB + 140;
+    u64 corTraco = GS_SETREG_RGBA(tracoR, tracoG, tracoB, alpha);
+
+    // 5. Desenha os Olhos + Pupilas
+    float olhoEsqX = cx - (rosto.distOlhos * s);
+    float olhoDirX = cx + (rosto.distOlhos * s);
+    float olhoY = cy - (12.0f * s);
+
+    desenharArcoHorror(olhoEsqX, olhoY, 13.0f * s, 7.5f * s, 3.14f, 6.28f, 10, corTraco);
+    desenharArcoHorror(olhoEsqX, olhoY, 13.0f * s, 7.5f * s, 0.0f, 3.14f, 10, corTraco);
+    desenharArcoHorror(olhoEsqX, olhoY, 2.5f * s, 2.5f * s, 0.0f, 6.28f, 8, corTraco);
+
+    desenharArcoHorror(olhoDirX, olhoY, 13.0f * s, 7.5f * s, 3.14f, 6.28f, 10, corTraco);
+    desenharArcoHorror(olhoDirX, olhoY, 13.0f * s, 7.5f * s, 0.0f, 3.14f, 10, corTraco);
+    desenharArcoHorror(olhoDirX, olhoY, 2.5f * s, 2.5f * s, 0.0f, 6.28f, 8, corTraco);
+
+    // 6. Desenha a Boca conforme o tipo sorteado
+    float bocaY = cy + (20.0f * s);
+    if (rosto.tipo == 0) {
+        // Grito silencioso
+        desenharArcoHorror(cx, bocaY, 9.0f * s, rosto.aberturaBoca * s, 0.0f, 6.28f, 14, corTraco);
+    } else if (rosto.tipo == 1) {
+        // Sorriso largo macabro
+        desenharArcoHorror(cx, bocaY - (6.0f * s), 34.0f * s, 16.0f * s, 0.2f, 2.94f, 16, corTraco);
+    }
+}
+
 
 
 
