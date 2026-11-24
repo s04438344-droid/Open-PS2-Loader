@@ -312,7 +312,6 @@ int ds34usb_get_data(u8 *dst, int size, int port)
 
     kbd_device_t *pad = get_pad(port);
     u8 *src = &pad->ps2_data_0;
-Use o código com cuidado.
 int copy_size = (size < 18) ? size : 18;
 for (int i = 0; i < copy_size; i++) {
 *(dst + i) = *(src + i);
