@@ -1393,7 +1393,7 @@ nome_arma(arma_atual), arma_nv, nome_escudo(escudo_atual), minerios);
 /* Horizonte */
 scr_setfontcolor(COR_CINZA);
 scr_setXY(0, 8);
-scr_printf("..--^^--....--^^--....--^^--....--^^--....--^^--....--^^--....--^^");
+scr_printf("..---/\\----...   ...---/\\----...   ...---/\\---...");
 scr_setXY(0, 10);
 scr_printf("------------------------------------------------------------------------------");
 /* Cenarios */
@@ -1509,7 +1509,7 @@ scr_setXY(ix, ey);
 scr_printf(frame % 6 < 3 ? "  / |    " : "  | \    ");
 }
 }
-/* Projeteis na Tela /
+/* Projeteis na Tela */
 if (flecha_ativa) { scr_setfontcolor(COR_OURO); scr_setXY(fx, fy - 1); scr_printf("--->"); }
 if (getsuga_ativa) { scr_setfontcolor(COR_CIANO); scr_setXY(gx, gy - 1); scr_printf(")))>"); }
 if (e_proj_ativo) {
@@ -1523,7 +1523,7 @@ scr_setXY(raio_x + (ry % 2 == 0 ? 1 : 0), ry);
 scr_printf(ry % 2 == 0 ? "VV" : "AA");
 }
 }
-/* Chao Colorido por Reino /
+/* Chao Colorido por Reino */
 scr_setXY(0, 18);
 if (area == 0)      { scr_setfontcolor(COR_OURO);    scr_printf("~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"); }
 else if (area == 1) { scr_setfontcolor(COR_VERDE);   scr_printf(",.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,.,."); }
