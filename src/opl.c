@@ -114,7 +114,7 @@ int abs_val(int v) {
 
 void iniciar_som(void) {
     int ret = 0;
-    if (audsrv_init && &audsrv_irx) {
+    if (audsrv_init != NULL) {
         SifLoadModule("rom0:LIBSD", 0, NULL);
         SifExecModuleBuffer(&audsrv_irx, size_audsrv_irx, 0, NULL, &ret);
         if (audsrv_init() == 0) {
@@ -306,15 +306,15 @@ tela_opcoes();
 }
 }
 scr_setfontcolor(COR_OURO);
-scr_setXY(10, 2);  scr_printf("=== DARK STONE SOULS: SOUL TRANSPOSITION ===");
-scr_setfontcolor(COR_CIANO);
-scr_setXY(33, 4);  scr_printf("    /\    ");
-scr_setXY(33, 5);  scr_printf("   /==\   ");
-scr_setfontcolor(COR_LARANJA);
-scr_setXY(33, 6);  scr_printf("  ()()  ");
-scr_setfontcolor(COR_CIANO);
-scr_setXY(33, 7);  scr_printf("   \==/   ");
-scr_setXY(33, 8);  scr_printf("    \/    ");
+                    scr_setXY(10, 2);  scr_printf("=== DARK STONE SOULS: SOUL TRANSPOSITION ===");
+        scr_setfontcolor(COR_CIANO);
+        scr_setXY(33, 4);  scr_printf("    /\\    ");
+        scr_setXY(33, 5);  scr_printf("   /==\\   ");
+        scr_setfontcolor(COR_LARANJA);
+        scr_setXY(33, 6);  scr_printf("  ()()  ");
+        scr_setfontcolor(COR_CIANO);
+        scr_setXY(33, 7);  scr_printf("   \\==/   ");
+        scr_setXY(33, 8);  scr_printf("    \\/    ");
 scr_setfontcolor(COR_CINZA);
 scr_setXY(6, 10); scr_printf("30 Salas em 5 Reinos | Combate 2.5D | NPCs Viajantes | Armaduras");
 scr_setfontcolor(sel == 0 ? (tem_save ? COR_OURO : COR_VERMELHO) : (tem_save ? COR_BRANCO : COR_CINZA));
@@ -1323,9 +1323,10 @@ if (area == npc_sol_r && sala == npc_sol_s && px >= 22 && px <= 33) {
 abriu_menu = 1;
 npc_sol_prog++;
 tocar_som(5);
-if (npc_sol_prog == 1) {
-resinas += 2;
-sprintf(fala, "Solaire: Louvado seja o Sol! \[T]/ Tome estas Resinas de Fogo!");
+            if (npc_sol_prog == 1) {
+            resinas += 2;
+            sprintf(fala, "Solaire: Louvado seja o Sol! \\[T]/ Tome estas Resinas de Fogo!");
+        }
 } else if (npc_sol_prog == 2) {
 armaduras_mask |= (1 << 2);
 sprintf(fala, "Solaire: Minha armadura e forte! Ganhou ARMADURA DE ASTORA!");
@@ -1573,12 +1574,12 @@ aliado_hp -= (4 + area);
 if (aliado_hp <= 0) { aliado_ativo = 0; sprintf(fala, "Seu Espectro Aliado foi derrotado!"); }
 }
 e_ai_estado = 3; e_ai_timer = 0;
-} else if (e_ai_estado == 3) {
-e_ai_timer++;
-/* Recuo tatico apos atacar */
-if (e_ai_timer < 6 && ex - e_dir > 3 && ex - e_dir < 68) ex -= e_dir;
-if (e_ai_timer >= 15) { e_ai_estado = 0; e_ai_timer = 0; }
-}
+        } else if (e_ai_estado == 3) {
+            e_ai_timer++;
+            /* Recuo tatico apos atacar */
+            if (e_ai_timer < 6 && ex - e_dir > 3 && ex - e_dir < 68) ex -= e_dir;
+            if (e_ai_timer >= 15) { e_ai_estado = 0; e_ai_timer = 0; }
+        }
 } else {
 /* IA DOS SUB-CHEFES E LORDES (TAMBEM VIRAM PARA AMBOS OS LADOS!) */
 int alvo_x = (aliado_ativo && aliado_hp > 0 && (frame % 50 < 25)) ? aliado_x : px;
