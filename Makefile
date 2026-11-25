@@ -1,4 +1,4 @@
-EE_BIN = OPNPS2LD.ELF
+EE_BIN = OPNPS2LD-JOGO.ELF
 EE_OBJS = src/opl.o
 EE_LIBS = -ldebug -lpad
 
