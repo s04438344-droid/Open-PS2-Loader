@@ -234,7 +234,6 @@ int main(void) {
 
             // ROLAMENTO ESTILO DARK SOULS (Botao X) - Invencivel durante o giro!
             if ((new_pad & PAD_CROSS) && roll_timer == 0) {
-Use o código com cuidado.
 if (stam >= 25) {
 stam -= 25;
 roll_timer = 6;
