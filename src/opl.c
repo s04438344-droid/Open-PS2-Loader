@@ -611,8 +611,8 @@ scr_setXY(66, 14); scr_printf(fragmentos >= 2 ? "CAVERNA ->" : "(NEVOA)");
 } else if (area == 2) {
 // Caverna de Cristal
 scr_setXY(2, 4);   scr_printf("VV  V   VVV    V     VV    VVV   V    VVV   V    VV  VVV");
-scr_setXY(18, 10); scr_printf(" /++\ "); scr_setXY(18, 11); scr_printf("/++++\");
-scr_setXY(50, 10); scr_printf(" /++\ "); scr_setXY(50, 11); scr_printf("/++++\");
+scr_setXY(18, 10); scr_printf(" /++\\ "); scr_setXY(18, 11); scr_printf("/++++\\");
+scr_setXY(50, 10); scr_printf(" /++\\ "); scr_setXY(50, 11); scr_printf("/++++\\");
 scr_setXY(2, 14);  scr_printf("<- FLORESTA");
 scr_setXY(66, 14); scr_printf(fragmentos >= 4 ? "CASTELO ->" : "(SELADO)");
 } else {
