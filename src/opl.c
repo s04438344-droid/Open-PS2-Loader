@@ -280,7 +280,6 @@ int main(void) {
                 }
 
                 // Ataque do Inimigo ou Chefe no Jogador
-Use o código com cuidado.
 if (e_stun == 0 && ex >= px - 1 && ex <= px + 3 && py >= 16) {
 int dano_sofrido = chefe_ativo ? 4 : (2 + (nivel / 2));
 if (arma_atual == 0) {
