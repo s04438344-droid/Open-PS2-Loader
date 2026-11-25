@@ -290,7 +290,6 @@ int tela_menu_principal(int tem_save) {
             if (new_pad & PAD_CROSS) {
                 if (sel == 0) {
                     if (tem_save) { tocar_som(2); scr_clear(); return 1; }
-Use o código com cuidado.
 else tocar_som(3);
 } else if (sel == 1) {
 if (tem_save) {
@@ -1065,7 +1064,6 @@ if ((paddata & PAD_DOWN) && py < 17) py += 1;
 
                     npc_ceb_r = 1 + ((frame + chefes_mortos + 1) % 4);
                     npc_ceb_s = 2 + ((frame * 5) % 4);
-Use o código com cuidado.
 if (npc_ceb_s == 3) npc_ceb_s = 4;
 npc_mag_r = 2 + ((frame + almas) % 3);
 npc_mag_s = 2 + ((frame * 7) % 4);
@@ -1568,7 +1566,6 @@ tocar_som(1);
                                 int d_e = ((e_arquetipo == 4 || invasor_ativo || mimico_ativo) ? (6 + area) : (3 + area)) - def_arm;
                                 if (d_e < 1) d_e = 1;
                                 hp -= d_e; tocar_som(3);
-Use o código com cuidado.
 sprintf(fala, "Golpeado (-%d HP)! Leia o aviso ( ! )!", d_e);
 }
 } else if (aliado_ativo && aliado_hp > 0 && abs_val(aliado_x - ex) <= 6) {
@@ -1578,12 +1575,12 @@ if (aliado_hp <= 0) { aliado_ativo = 0; sprintf(fala, "Seu Espectro Aliado foi d
 e_ai_estado = 3; e_ai_timer = 0;
 } else if (e_ai_estado == 3) {
 e_ai_timer++;
-/* Recuo tatico apos atacar /
+/* Recuo tatico apos atacar */
 if (e_ai_timer < 6 && ex - e_dir > 3 && ex - e_dir < 68) ex -= e_dir;
 if (e_ai_timer >= 15) { e_ai_estado = 0; e_ai_timer = 0; }
 }
 } else {
-/ IA DOS SUB-CHEFES E LORDES (TAMBEM VIRAM PARA AMBOS OS LADOS!) */
+/* IA DOS SUB-CHEFES E LORDES (TAMBEM VIRAM PARA AMBOS OS LADOS!) */
 int alvo_x = (aliado_ativo && aliado_hp > 0 && (frame % 50 < 25)) ? aliado_x : px;
 int alvo_y = (aliado_ativo && aliado_hp > 0 && (frame % 50 < 25)) ? aliado_y : py;
 int dx = alvo_x - ex;
@@ -2008,7 +2005,6 @@ sprintf(fala, "VOCE MORREU... %d Almas ficaram na Poca de Sangue (Reino %d Sala 
                 /* Tronco + Animacao da Espada/Saque para Direita ou Esquerda */
                 const char *corpo = (peito_atual == 0) ? "-|-" : (peito_atual == 1 ? "(#)" : "[#]");
                 scr_setXY(jx, py - 1);
-Use o código com cuidado.
 if (p_dir == 1) {
 if (parry_timer > 0)       scr_printf("%s!PARRY", corpo);
 else if (defendendo)       scr_printf(escudo_atual == 2 ? "%s|DEF " : "%s|-DEF", corpo);
