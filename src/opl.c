@@ -11,6 +11,7 @@
 #include "include/renderman.h"
 #include "include/lang.h"
 #include "include/themes.h"
+#include "include/fntsys.h"
 #include "include/textures.h"
 #include "include/pad.h"
 #include "include/texcache.h"
