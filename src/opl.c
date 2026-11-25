@@ -7,7 +7,14 @@
 #include <debug.h>
 #include <libpad.h>
 
-static char padBuf __attribute__((aligned(64)));
+static struct {
+    u64 a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p;
+    u64 q,r,s,t,u,v,w,x,y,z,A,B,C,D,E,F;
+} padBuf __attribute__((aligned(64)));
+
+static struct {
+    u64 a,b,c,d,e,f,g,h,i,j,k,l;
+} falaMem;
 
 void esperar_botao(u32 botao) {
     struct padButtonStatus buttons;
@@ -28,11 +35,11 @@ void esperar_botao(u32 botao) {
 void tela_historia_inicio(void) {
     scr_clear();
     scr_setXY(18, 3);  scr_printf("=== A LENDA DA PEDRA DA ALMA ===");
-    scr_setXY(33, 5);  scr_printf("    /\\    ");
-    scr_setXY(33, 6);  scr_printf("   /  \\   ");
+    scr_setXY(33, 5);  scr_printf("    ^^    ");
+    scr_setXY(33, 6);  scr_printf("   /  |   ");
     scr_setXY(33, 7);  scr_printf("  ( ** )  ");
-    scr_setXY(33, 8);  scr_printf("   \\  /   ");
-    scr_setXY(33, 9);  scr_printf("    \\/    ");
+    scr_setXY(33, 8);  scr_printf("   |  /   ");
+    scr_setXY(33, 9);  scr_printf("    vv    ");
 
     scr_setXY(8, 12); scr_printf("Ha seculos, a Pedra da Alma mantinha a paz no Vale de Pedra.");
     scr_setXY(8, 13); scr_printf("Mas o Lorde das Sombras a partiu em 3 FRAGMENTOS sagrados.");
@@ -48,9 +55,9 @@ void tela_historia_inicio(void) {
 void tela_historia_final(int nivel) {
     scr_clear();
     scr_setXY(18, 3);  scr_printf("=== A PEDRA DA ALMA FOI RESTAURADA! ===");
-    scr_setXY(33, 5);  scr_printf("   \\|/    ");
+    scr_setXY(33, 5);  scr_printf("   .|.    ");
     scr_setXY(33, 6);  scr_printf("  -(*)-   ");
-    scr_setXY(33, 7);  scr_printf("   /|\\    ");
+    scr_setXY(33, 7);  scr_printf("   '|'    ");
 
     scr_setXY(8, 10); scr_printf("Com um golpe final, o Lorde das Sombras se desfaz em poeira!");
     scr_setXY(8, 11); scr_printf("Os 3 Fragmentos se unem no ceu e devolvem a luz ao vale.");
@@ -65,12 +72,13 @@ void tela_historia_final(int nivel) {
 int main(void) {
     struct padButtonStatus buttons;
     u32 paddata = 0, old_pad = 0, new_pad = 0;
+    char *fala = (char *)&falaMem;
 
     SifInitRpc(0);
     SifLoadModule("rom0:SIO2MAN", 0, NULL);
     SifLoadModule("rom0:PADMAN", 0, NULL);
     padInit(0);
-    padPortOpen(0, 0, padBuf);
+    padPortOpen(0, 0, &padBuf);
 
     init_scr();
     scr_setCursor(0);
@@ -105,7 +113,6 @@ int main(void) {
         int e_stun = 0;
         int frame = 0;
 
-        char fala[76];
         sprintf(fala, "Fale com a Estatua (Triangulo) ou siga a direita (->) para lutar.");
 
         while (!jogo_zerado) {
@@ -273,9 +280,10 @@ int main(void) {
                 }
 
                 // Ataque do Inimigo ou Chefe no Jogador
-                if (e_stun == 0 && ex >= px - 1 && ex <= px + 3 && py >= 16) {
-                    int dano_sofrido = chefe_ativo ? 4 : (2 + (nivel / 2));
-                    if (arma_atual == 0) {
+Use o código com cuidado.
+if (e_stun == 0 && ex >= px - 1 && ex <= px + 3 && py >= 16) {
+int dano_sofrido = chefe_ativo ? 4 : (2 + (nivel / 2));
+if (arma_atual == 0) {
 dano_sofrido = (dano_sofrido > 1) ? (dano_sofrido / 2) : 1;
 sprintf(fala, "Seu ESCUDO bloqueou parte do golpe! Sofreu %d de dano.", dano_sofrido);
 } else {
@@ -306,46 +314,44 @@ nivel, hp, hp_max, mp, mp_max, fragmentos,
 arma_atual == 0 ? "ESPADA+ESCUDO" : "MARTELO");
 scr_setXY(2, 2);
 scr_printf("(Quad) Atacar  (Bola) Relampago(-3MP)  (L1/R1) Arma  (X) Pulo  (Tri) Falar");
-// Fundo Parallax ASCII
-scr_setXY(4, 5);  scr_printf("   ..      .       /\         /\      .       ..   ");
-scr_setXY(4, 6);  scr_printf("  (    )            /  \  /\   /  \            (    )  ");
-scr_setXY(4, 7);  scr_printf("   '--'            /    \/  \ /    \            '--'   ");
+// Fundo Parallax ASCII (Sem barra invertida)
+scr_setXY(4, 5);  scr_printf("   ..      .       ^^         ^^      .       ..   ");
+scr_setXY(4, 6);  scr_printf("  (    )            /  |  ^^   /  |            (    )  ");
+scr_setXY(4, 7);  scr_printf("   '--'            /    v/  v /    |            '--'   ");
 // Desenha Cenario e NPCs
 if (area == 0) {
-scr_setXY(30, 14); scr_printf("  /^\  ");
+scr_setXY(30, 14); scr_printf("  /^^  ");
 scr_setXY(30, 15); scr_printf(" ( o_o ) ");
-scr_setXY(30, 16); scr_printf(" /|===|\ ");
+scr_setXY(30, 16); scr_printf(" /|===|| ");
 scr_setXY(30, 17); scr_printf(" (ESTATUA)");
 scr_setXY(64, 16); scr_printf("DESFILADEIRO ->");
 } else {
 scr_setXY(2, 16);  scr_printf("<- SANTUARIO");
 if (chefe_ativo) {
-// Desenho do Chefe Final: Lorde das Sombras
 if (e_stun > 0) {
 scr_setXY(ex, 14); scr_printf("  * @ *  ");
-scr_setXY(ex, 15); scr_printf(" \(x_x)/ ");
+scr_setXY(ex, 15); scr_printf(" v(x_x)v ");
 scr_setXY(ex, 16); scr_printf("  |###|  ");
-scr_setXY(ex, 17); scr_printf("  /   \  ");
+scr_setXY(ex, 17); scr_printf("  /   |  ");
 } else {
-scr_setXY(ex, 14); scr_printf("  /\/\  ");
+scr_setXY(ex, 14); scr_printf("  ^^^^  ");
 scr_setXY(ex, 15); scr_printf(" ( >< ) ");
-scr_setXY(ex, 16); scr_printf(" /|###|\ ");
-scr_setXY(ex, 17); scr_printf("  /   \  ");
+scr_setXY(ex, 16); scr_printf(" /|###|| ");
+scr_setXY(ex, 17); scr_printf("  /   |  ");
 }
 } else {
-// Desenho do Golem de Pedra
 if (e_stun > 0) {
 scr_setXY(ex, 15); scr_printf("  * @ *  ");
 scr_setXY(ex, 16); scr_printf(" (x _ x) ");
-scr_setXY(ex, 17); scr_printf(" /|###|\ ");
+scr_setXY(ex, 17); scr_printf(" /|###|| ");
 } else if (frame % 6 < 3) {
 scr_setXY(ex, 15); scr_printf("  .---.  ");
 scr_setXY(ex, 16); scr_printf(" (O _ O) ");
-scr_setXY(ex, 17); scr_printf(" /|###|\ ");
+scr_setXY(ex, 17); scr_printf(" /|###|| ");
 } else {
 scr_setXY(ex, 15); scr_printf("  .---.  ");
 scr_setXY(ex, 16); scr_printf(" (O _ O) ");
-scr_setXY(ex, 17); scr_printf(" \|###|/ ");
+scr_setXY(ex, 17); scr_printf(" ||###|/ ");
 }
 }
 }
@@ -370,7 +376,7 @@ else                    scr_printf(" -|- (T)");
 }
 scr_setXY(px, py);
 if ((paddata & (PAD_LEFT | PAD_RIGHT)) && (frame % 4 < 2)) {
-scr_printf(" / \ ");
+scr_printf(" / | ");
 } else {
 scr_printf(" | | ");
 }
