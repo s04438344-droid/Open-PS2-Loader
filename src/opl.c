@@ -1136,7 +1136,7 @@ sprintf(fala, "FASE FINAL 3/3! %s entrou em FRENESI MORTAL!", nome_guardiao(tipo
 if (e_stun > 0) {
 e_stun--;
 } else if (e_chill > 0 && frame % 2 == 0) {
-/* Congelamento da Runa de Gelo retarda o inimigo /
+/* Congelamento da Runa de Gelo retarda o inimigo */
 } else if (tipo_chefe == 0) {
 int dist = ex - px;
 if (e_ai_estado == 0) {
@@ -1238,8 +1238,7 @@ if (e_ai_timer >= exaustao) { e_ai_estado = 0; e_ai_timer = 0; }
 }
 }
 if (raio_chefe_timer > 0) {
-raio_chefe_
-timer--;
+raio_chefe_timer--;
 if (raio_chefe_timer == 1) {
 tocar_som(1);
 if (roll_timer == 0 && abs_val(px - rc_x) <= 2 && abs_val(py - rc_y) <= 1) {
@@ -1508,6 +1507,7 @@ scr_printf(e_arquetipo == 1 ? "||-|###| " : (e_arquetipo == 2 ? "(-|###|  " : " 
 scr_setXY(ix, ey);
 scr_printf(frame % 6 < 3 ? "  / |    " : "  | \    ");
 }
+}    
 }
 /* Projeteis na Tela */
 if (flecha_ativa) { scr_setfontcolor(COR_OURO); scr_setXY(fx, fy - 1); scr_printf("--->"); }
