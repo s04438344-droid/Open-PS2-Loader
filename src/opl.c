@@ -24,6 +24,9 @@
 #include "include/compatupd.h"
 #include "include/extern_irx.h"
 #include "httpclient.h"
+#include <stdio.h>
+#include <stdlib.h>
+
 
 #include "include/supportbase.h"
 #include "include/bdmsupport.h"
@@ -2070,6 +2073,190 @@ int main(int argc, char *argv[])
     ioPutRequest(IO_CUSTOM_SIMPLEACTION, &deferredInit);
 
     guiIntroLoop();
+        // === SOULS ASCII 2.5D ===
+    char *txt = (char *)malloc(128), *msg = (char *)malloc(64);
+    u64 cW = GS_SETREG_RGBA(0xFF,0xFF,0xFF,0x80), cG = GS_SETREG_RGBA(0x40,0xFF,0x40,0x80);
+    u64 cR = GS_SETREG_RGBA(0xFF,0x35,0x35,0x80), cY = GS_SETREG_RGBA(0xFF,0xEE,0x40,0x80);
+    u64 cO = GS_SETREG_RGBA(0xFF,0x99,0x20,0x80), cC = GS_SETREG_RGBA(0x40,0xEE,0xFF,0x80);
+    u64 cD = GS_SETREG_RGBA(0x66,0x66,0x66,0x80);
+
+    int mode = 0, cur = 0, frm = 0, shk = 0, bnr = 60, area = 1, wave = 0;
+    int hx = 140, hy = 250, hDir = 1, lv = 1, vit = 10, end = 10, str = 10;
+    int souls = 0, min = 1, hp = 100, mHp = 100, stm = 100, mStm = 100, estus = 3;
+    int wpn = 0, hasC = 0, hasS = 0, u0 = 0, u1 = 0, u2 = 0;
+    int atkT = 0, rolT = 0, rdx = 0, rdy = 0, blk = 0, inv = 0;
+    int eAlv = 0, eTyp = 0, ex = 480, ey = 250, eHp = 40, eMHp = 40, eSt = 0, eT = 0;
+    int pAlv = 0, px = 0, py = 0, pDir = -1, brl = 1, bx = 320, by = 240;
+    sprintf(msg, "CEMITERIO DAS CINZAS");
+
+    while (1) {
+        readPads(); frm++;
+        if (shk > 0) shk--;
+        if (bnr > 0) bnr--;
+        if (inv > 0) inv--;
+
+        if (mode == 0) {
+            mHp = 100 + (vit - 10) * 15; mStm = 100 + (end - 10) * 12;
+            if (atkT == 0 && rolT == 0 && !blk && stm < mStm) stm += 2;
+            if (atkT > 0) atkT--;
+
+            if (wave == 0 && getKeyPressed(KEY_CROSS)) {
+                if (hx < 190) { hp = mHp; stm = mStm; estus = 3; cur = 0; mode = 1; }
+                else if (hx < 310) { cur = 0; mode = 2; }
+            }
+
+            blk = 0;
+            if (rolT > 0) { rolT--; hx += rdx * 7; hy += rdy * 5; }
+            else if (atkT == 0) {
+                if (getKey(KEY_L1) && stm > 5) blk = 1;
+                int spd = blk ? 2 : 4, dx = 0, dy = 0;
+                if (getKey(KEY_UP) && hy > 195) { hy -= spd; dy = -1; }
+                if (getKey(KEY_DOWN) && hy < 315) { hy += spd; dy = 1; }
+                if (getKey(KEY_LEFT) && hx > 30) { hx -= spd; dx = -1; hDir = -1; }
+                if (getKey(KEY_RIGHT) && hx < 560) { hx += spd; dx = 1; hDir = 1; }
+                if (getKeyPressed(KEY_CIRCLE) && stm >= 20) { stm -= 20; rolT = 9; inv = 12; rdx = dx ? dx : hDir; rdy = dy; }
+                if (getKeyPressed(KEY_R2) && estus > 0 && hp < mHp) { estus--; hp += mHp / 2; if (hp > mHp) hp = mHp; }
+                if (getKeyPressed(KEY_R1)) { wpn = (wpn + 1) % 3; if (wpn == 1 && !hasC) wpn = hasS ? 2 : 0; if (wpn == 2 && !hasS) wpn = 0; }
+                int pwr = getKeyPressed(KEY_SQUARE) ? 1 : (getKeyPressed(KEY_TRIANGLE) ? 2 : 0);
+                if (pwr > 0 && stm >= pwr * 16) {
+                    stm -= pwr * 16; atkT = (wpn == 1) ? 14 : 9;
+                    int rch = (wpn == 1) ? 75 : ((wpn == 2) ? 90 : 55);
+                    int dmg = (str * 2) + (wpn == 0 ? u0*6 : (wpn == 1 ? 10+u1*9 : 4+u2*7));
+                    if (pwr == 2) dmg = (dmg * 3) / 2;
+                    if (brl && abs(by - hy) < 22 && ((hDir == 1 && bx > hx && bx - hx < rch) || (hDir == -1 && bx < hx && hx - bx < rch))) {
+                        brl = 0; shk = 10; if (eAlv && abs(ex - bx) < 95) eHp -= 45;
+                    }
+                    if (eAlv && abs(ey - hy) < 22 && ((hDir == 1 && ex >= hx && ex - hx <= rch) || (hDir == -1 && ex <= hx && hx - ex <= rch))) {
+                        if (eTyp == 1 && pwr == 1 && eSt != 2) shk = 4;
+                        else { eHp -= dmg; if (pwr == 2) { shk = 8; eT = 15; } if (eTyp < 10) ex += hDir * 14; }
+                    }
+                }
+            }
+
+            if (!eAlv && hx >= 545) {
+                hx = 50; wave++; brl = (wave % 2 == 0); bx = 300; by = 245;
+                if (wave > 4) { if (area < 3) { area++; wave = 0; } else mode = 4; }
+                else {
+                    eAlv = 1; ex = 480; ey = 250; eSt = 0; eT = 0;
+                    eTyp = (wave == 4) ? (9 + area) : ((wave + area) % 5);
+                    eMHp = (wave == 4) ? (220 * area) : (45 * area); eHp = eMHp;
+                    if (wave == 4) { sprintf(msg, "CHEFE DA AREA %d!", area); bnr = 75; }
+                }
+            }
+
+            if (eAlv) {
+                if (eHp <= 0) {
+                    eAlv = 0; shk = 8; souls += (eTyp >= 10) ? 350*area : 50*area;
+                    if (eTyp >= 10 || frm % 2 == 0) min += (eTyp >= 10) ? 3 : 1;
+                } else {
+                    int dx = hx - ex, dy = hy - ey;
+                    if (eSt == 0) {
+                        int s = (eTyp == 3) ? 4 : 2;
+                        if (abs(dy) > 5) ey += (dy > 0) ? s : -s;
+                        if (eTyp == 2) { if (abs(dy) < 12 && frm % 50 == 0) { eSt = 1; eT = 18; } }
+                        else if (abs(dx) > 48) ex += (dx > 0) ? s : -s;
+                        else if (abs(dy) < 16) { eSt = 1; eT = (eHp < eMHp/2 && eTyp >= 10) ? 14 : 22; }
+                    } else if (eSt == 1 && --eT <= 0) {
+                        eSt = 2; eT = 10;
+                        if (eTyp == 2 || eTyp == 12 || (eTyp == 10 && eHp < eMHp/2)) { pAlv = 1; px = ex; py = ey + 18; pDir = (hx < ex) ? -1 : 1; }
+                    } else if (eSt == 2) {
+                        if (eT == 6 && eTyp != 2 && abs(dx) < 65 && abs(dy) < 20 && inv == 0) {
+                            int d = (eTyp >= 10) ? 25 + area*5 : 12 + area*4;
+                            if (blk && stm >= 20) { stm -= 22; hp -= d / 5; } else { hp -= d; inv = 22; shk = 7; }
+                        }
+                        if (--eT <= 0) eSt = 0;
+                    }
+                }
+            }
+            if (pAlv) { px += pDir * 8; if (px < 10 || px > 620) pAlv = 0; if (abs(hx - px) < 18 && abs(hy + 18 - py) < 16 && inv == 0) { pAlv = 0; if (blk && stm >= 15) stm -= 18; else { hp -= 18; inv = 20; } } }
+            if (hp <= 0) { souls = 0; eAlv = 0; pAlv = 0; mode = 3; }
+        }
+        else if (mode == 1) {
+            if (getKeyPressed(KEY_UP) && cur > 0) cur--;
+            if (getKeyPressed(KEY_DOWN) && cur < 4) cur++;
+            int cost = 50 + lv * 35;
+            if (getKeyPressed(KEY_CROSS)) {
+                if (cur == 0 && souls >= cost) { souls -= cost; vit++; lv++; }
+                if (cur == 1 && souls >= cost) { souls -= cost; end++; lv++; }
+                if (cur == 2 && souls >= cost) { souls -= cost; str++; lv++; }
+                if (cur == 3) {
+                    FILE *f = fopen("mc0:/SOULS.SAV", "wb"); if (!f) f = fopen("mass:/SOULS.SAV", "wb");
+                    if (f) { fwrite(&lv,4,1,f); fwrite(&vit,4,1,f); fwrite(&end,4,1,f); fwrite(&str,4,1,f); fwrite(&souls,4,1,f); fwrite(&min,4,1,f); fwrite(&area,4,1,f); fwrite(&hasC,4,1,f); fwrite(&hasS,4,1,f); fwrite(&u0,4,1,f); fwrite(&u1,4,1,f); fwrite(&u2,4,1,f); fclose(f); sprintf(msg, "SALVO!"); bnr = 50; }
+                }
+                if (cur == 4) mode = 0;
+            }
+            if (getKeyPressed(KEY_TRIANGLE)) {
+                FILE *f = fopen("mc0:/SOULS.SAV", "rb"); if (!f) f = fopen("mass:/SOULS.SAV", "rb");
+                if (f) { fread(&lv,4,1,f); fread(&vit,4,1,f); fread(&end,4,1,f); fread(&str,4,1,f); fread(&souls,4,1,f); fread(&min,4,1,f); fread(&area,4,1,f); fread(&hasC,4,1,f); fread(&hasS,4,1,f); fread(&u0,4,1,f); fread(&u1,4,1,f); fread(&u2,4,1,f); fclose(f); wave = 0; sprintf(msg, "CARREGADO!"); bnr = 50; }
+            }
+            if (getKeyPressed(KEY_CIRCLE)) mode = 0;
+        }
+        else if (mode == 2) {
+            if (getKeyPressed(KEY_UP) && cur > 0) cur--;
+            if (getKeyPressed(KEY_DOWN) && cur < 5) cur++;
+            if (getKeyPressed(KEY_CROSS)) {
+                if (cur == 0 && !hasC && souls >= 150 && min >= 1) { souls -= 150; min--; hasC = 1; wpn = 1; }
+                if (cur == 1 && !hasS && souls >= 150 && min >= 1) { souls -= 150; min--; hasS = 1; wpn = 2; }
+                if (cur == 2 && u0 < 5 && min > u0 && souls >= 80) { souls -= 80; min -= (u0+1); u0++; }
+                if (cur == 3 && hasC && u1 < 5 && min > u1 && souls >= 100) { souls -= 100; min -= (u1+1); u1++; }
+                if (cur == 4 && hasS && u2 < 5 && min > u2 && souls >= 100) { souls -= 100; min -= (u2+1); u2++; }
+                if (cur == 5) mode = 0;
+            }
+            if (getKeyPressed(KEY_CIRCLE)) mode = 0;
+        }
+        else if (getKeyPressed(KEY_CROSS)) { if (mode == 4) area = 1; wave = 0; hx = 140; hp = mHp; stm = mStm; estus = 3; mode = 0; }
+
+        int sx = shk ? ((frm % 2) ? 4 : -4) : 0;
+        rmStartFrame();
+        sprintf(txt, "HP:%d/%d STM:%d EST:%d ALMAS:%d MIN:%d | Area %d (%d/4)", hp, mHp, stm, estus, souls, min, area, wave);
+        fntRenderString(0, 20, 22, 0, 0, 0, txt, cG);
+        fntRenderString(0, 20+sx, 205, 0, 0, 0, "------------------------------------------------------------------", cD);
+        fntRenderString(0, 20+sx, 360, 0, 0, 0, "==================================================================", cW);
+
+        if (wave == 0) {
+            fntRenderString(0, 125+sx, 220, 0, 0, 0, (frm%16<8) ? " ^*^ " : " *^* ", cO);
+            fntRenderString(0, 110, 190, 0, 0, 0, "Fogueira(X)", cO);
+            fntRenderString(0, 255+sx, 205, 0, 0, 0, "  o  ", cC);
+            fntRenderString(0, 255+sx, 223, 0, 0, 0, " /|\\T", cC);
+            fntRenderString(0, 235, 180, 0, 0, 0, "Ferreiro(X)", cC);
+        } else if (brl) fntRenderString(0, bx+sx, by+18, 0, 0, 0, "(O)", cO);
+        if (!eAlv && mode == 0 && frm%30 < 15) fntRenderString(0, 520, 170, 0, 0, 0, "SIGA ==>", cY);
+
+        for (int p = 0; p < 2; p++) {
+            int dH = (p == 0) ? (hy <= ey) : (hy > ey);
+            if (dH) {
+                if (rolT > 0) fntRenderString(0, hx+sx, hy+18, 0, 0, 0, " (@) ", cW);
+                else {
+                    fntRenderString(0, hx+sx, hy, 0, 0, 0, "  o  ", blk ? cC : cW);
+                    fntRenderString(0, hx+sx, hy+18, 0, 0, 0, atkT ? (hDir>0 ? " /|==>" : "<==|\\ ") : (blk ? " |#\\ " : " /|\\ "), blk ? cC : cW);
+                    fntRenderString(0, hx+sx, hy+36, 0, 0, 0, (frm%16<8) ? " / > " : " < \\ ", blk ? cC : cW);
+                }
+            } else if (eAlv) {
+                u64 ec = (eSt == 1) ? cY : cR;
+                if (eTyp >= 10) {
+                    fntRenderString(0, ex+sx, ey-18, 0, 0, 0, " \\O/ ", ec);
+                    fntRenderString(0, ex+sx, ey,    0, 0, 0, "<=#=>", ec);
+                    fntRenderString(0, ex+sx, ey+18, 0, 0, 0, " /#\\ ", ec);
+                    sprintf(txt, "BOSS HP: %d/%d", eHp, eMHp); fntRenderString(0, 230, 385, 0, 0, 0, txt, cR);
+                } else {
+                    fntRenderString(0, ex+sx, ey,    0, 0, 0, (eTyp==1) ? " (o) " : "  o  ", ec);
+                    fntRenderString(0, ex+sx, ey+18, 0, 0, 0, (eTyp==1) ? "|#|\\ " : "-/|\\ ", ec);
+                    fntRenderString(0, ex+sx, ey+36, 0, 0, 0, " / \\ ", ec);
+                }
+            }
+        }
+        if (pAlv) fntRenderString(0, px, py, 0, 0, 0, "<---", cO);
+        if (bnr > 0) fntRenderString(0, 210, 120, 0, 0, 0, msg, cY);
+
+        if (mode == 1) { sprintf(txt, "FOGUEIRA (Custo:%d) | %sVit %sVig %sFor %sSalvar %sSair (Tri:Load)", 50+lv*35, cur==0?">":"", cur==1?">":"", cur==2?">":"", cur==3?">":"", cur==4?">":""); fntRenderString(0, 40, 145, 0, 0, 0, txt, cO); }
+        else if (mode == 2) { sprintf(txt, "FERREIRO | %sClaym(150+1) %sLanca(150+1) %sEsp+%d %sCla+%d %sLan+%d %sSair", cur==0?">":"", cur==1?">":"", cur==2?">":"", u0, cur==3?">":"", u1, cur==4?">":"", u2, cur==5?">":""); fntRenderString(0, 30, 145, 0, 0, 0, txt, cC); }
+        else if (mode == 3) fntRenderString(0, 230, 180, 0, 0, 0, "VOCE MORREU - Aperte (X)", cR);
+        else if (mode == 4) fntRenderString(0, 200, 180, 0, 0, 0, "JOGO ZERADO! (X) New Game+", cY);
+
+        fntRenderString(0, 25, 415, 0, 0, 0, "Setas:Move Quad:Atk Tri:Forte Bol:Rola L1:Escudo R1:Arma R2:Cura", cD);
+        rmEndFrame();
+    }
+
     guiMainLoop();
 
     return 0;
