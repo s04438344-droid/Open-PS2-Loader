@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <debug.h>
 #include <libpad.h>
 #include <libmc.h>
@@ -1165,7 +1166,7 @@ tocar_som(1);
 }
 } else if (abs_val(px - ex) <= 6 && abs_val(py - ey) <= 1) {
 if (roll_timer > 0) {
-/ Esquiva perfeita */
+/* Esquiva perfeita */
 } else if (parry_timer > 0 && e_arquetipo != 4) {
 e_stun = 24;
 ehp -= (atk_base + arma_nv + 8);
