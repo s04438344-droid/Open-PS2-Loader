@@ -1509,7 +1509,6 @@ scr_setXY(ix, ey);
 scr_printf(frame % 6 < 3 ? "  / |    " : "  | \    ");
 }
 }
-}
 /* Projeteis na Tela /
 if (flecha_ativa) { scr_setfontcolor(COR_OURO); scr_setXY(fx, fy - 1); scr_printf("--->"); }
 if (getsuga_ativa) { scr_setfontcolor(COR_CIANO); scr_setXY(gx, gy - 1); scr_printf(")))>"); }
