@@ -1,5 +1,5 @@
 EE_BIN = OPNPS2LD.ELF
-EE_OBJS = main.o
+EE_OBJS = src/opl.o
 EE_INCS = -I$(PS2SDK)/ports/include -I$(GSKIT)/include
 EE_LDFLAGS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib
 EE_LIBS = -lgskit -ldmakit -lpad -lc -lkernel
