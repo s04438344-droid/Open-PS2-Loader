@@ -12,6 +12,9 @@ int gOverscan = 0;
 int gWideScreen = 0;
 int KeyPressedOnce = 0;
 int DisableCron = 0;
+int gXSensitivity = 1;
+int gYSensitivity = 1;
+
 
 
 int main(int argc, char *argv) {
