@@ -10,8 +10,8 @@ int gXOff = 0;
 int gYOff = 0;
 int gOverscan = 0;
 int gWideScreen = 0;
-void KeyPressedOnce(void) {}
-void DisableCron(void) {}
+int KeyPressedOnce = 0;
+int DisableCron = 0;
 
 
 int main(int argc, char *argv) {
