@@ -1,125 +1,188 @@
-#include "include/opl.h"
-#include "include/renderman.h"
-#include "include/fntsys.h"
-#include "include/pad.h"
-#include <stdio.h>
+#include <tamtypes.h>
+#include <kernel.h>
+#include <sifrpc.h>
+#include <loadfile.h>
 #include <stdlib.h>
-// Variaveis e funcoes exigidas pelo renderman.c e pad.c
-int gVMode = 0;
-int gXOff = 0;
-int gYOff = 0;
-int gOverscan = 0;
-int gWideScreen = 0;
-int KeyPressedOnce = 0;
-int DisableCron = 0;
-int gXSensitivity = 1;
-int gYSensitivity = 1;
+#include <string.h>
+#include <libpad.h>
+#include <gsKit.h>
+#include <dmaKit.h>
 
+static u64 padBuf __attribute__((aligned(64)));
 
+/* Sprites 5x5 dos Naipes (0=Copas, 1=Ouros, 2=Espadas, 3=Paus) e Numeros (1..9, 10=X, 11=J, 12=Q, 13=K, 14=A) */
+static const char NAIPES[4][5][6] = {
+    { "01010", "11111", "11111", "01110", "00100" }, /* Copas */
+    { "00100", "01110", "11111", "01110", "00100" }, /* Ouros */
+    { "00100", "01110", "11111", "00100", "01110" }, /* Espadas */
+    { "01110", "11111", "01110", "00100", "01110" }  /* Paus */
+};
 
-int main(int argc, char *argv) {
-    // Inicializa apenas Video, Fontes e Controles do PS2 (sem interface do OPL)
-    rmInit();
-    fntInit();
+static const char DIGITOS[15][5][4] = {
+    { "000","000","000","000","000" },
+    { "010","110","010","010","111" }, /* 1 */
+    { "111","001","111","100","111" }, /* 2 */
+    { "111","001","111","001","111" }, /* 3 */
+    { "101","101","111","001","001" }, /* 4 */
+    { "111","100","111","001","111" }, /* 5 */
+    { "111","100","111","101","111" }, /* 6 */
+    { "111","001","001","001","001" }, /* 7 */
+    { "111","101","111","101","111" }, /* 8 */
+    { "111","101","111","001","111" }, /* 9 */
+    { "101","101","010","101","101" }, /* X (10) */
+    { "001","001","001","101","111" }, /* J (11) */
+    { "111","101","101","111","001" }, /* Q (12) */
+    { "101","101","110","101","101" }, /* K (13) */
+    { "010","101","111","101","101" }  /* A (14) */
+};
+
+typedef struct { int valor, naipe, sel; } Carta;
+
+void desenhar_pixel_art(GSGLOBAL *gs, float x, float y, float esc, int w, int h, const char *grade, u64 cor) {
+    for (int r = 0; r < h; r++) {
+        for (int c = 0; c < w; c++) {
+            if (grade[r * (w + 1) + c] == '1') {
+                gsKit_prim_sprite(gs, x + c * esc, y + r * esc,
+                                  x + (c + 1) * esc, y + (r + 1) * esc, 5, cor);
+            }
+        }
+    }
+}
+
+void desenhar_carta(GSGLOBAL *gs, Carta c, float x, float y, int foco) {
+    u64 c_borda = foco ? GS_SETREG_RGBAQ(0xFF, 0xCC, 0x22, 0x80, 0x00) : GS_SETREG_RGBAQ(0x15, 0x15, 0x15, 0x80, 0x00);
+    u64 c_fundo = GS_SETREG_RGBAQ(0xF2, 0xEE, 0xE5, 0x80, 0x00);
+    u64 c_naipe = (c.naipe < 2) ? GS_SETREG_RGBAQ(0xDD, 0x22, 0x22, 0x80, 0x00) : GS_SETREG_RGBAQ(0x18, 0x18, 0x22, 0x80, 0x00);
+
+    /* Sombra + Borda + Papel da Carta (76x112 pixels) */
+    gsKit_prim_sprite(gs, x + 4, y + 4, x + 80, y + 116, 2, GS_SETREG_RGBAQ(0x08, 0x20, 0x10, 0x80, 0x00));
+    gsKit_prim_sprite(gs, x - 3, y - 3, x + 79, y + 115, 3, c_borda);
+    gsKit_prim_sprite(gs, x, y, x + 76, y + 112, 4, c_fundo);
+
+    /* Valor e Naipe em Pixel Art */
+    desenhar_pixel_art(gs, x + 8, y + 8, 4.0f, 3, 5, (const char *)DIGITOS[c.valor], c_naipe);
+    desenhar_pixel_art(gs, x + 23, y + 44, 6.0f, 5, 5, (const char *)NAIPES[c.naipe], c_naipe);
+}
+
+int avaliar_jogada(Carta mao[5]) {
+    int cont[15] = {0}, soma = 0, pares = 0, trinca = 0, quadra = 0;
+    for (int i = 0; i < 5; i++) {
+        if (mao[i].sel) { cont[mao[i].valor]++; soma += mao[i].valor; }
+    }
+    if (soma == 0) return 0;
+    for (int v = 2; v <= 14; v++) {
+        if (cont[v] == 2) pares++;
+        else if (cont[v] == 3) trinca = 1;
+        else if (cont[v] == 4) quadra = 1;
+    }
+    if (quadra) return soma * 8 + 200;
+    if (trinca && pares) return soma * 6 + 120;
+    if (trinca) return soma * 4 + 75;
+    if (pares >= 2) return soma * 3 + 45;
+    if (pares == 1) return soma * 2 + 20;
+    return soma;
+}
+
+int main(void) {
+    struct padButtonStatus btn;
+    u32 pad = 0, old = 0, np = 0;
+
+    SifInitRpc(0);
+    SifLoadModule("rom0:SIO2MAN", 0, NULL);
+    SifLoadModule("rom0:PADMAN", 0, NULL);
     padInit(0);
+    padPortOpen(0, 0, padBuf);
 
-    char *txt = (char *)malloc(128);
-    u64 cBlk = GS_SETREG_RGBA(0x00,0x00,0x00,0x80), cW = GS_SETREG_RGBA(0xFF,0xFF,0xFF,0x80);
-    u64 cG = GS_SETREG_RGBA(0x40,0xFF,0x40,0x80), cR = GS_SETREG_RGBA(0xFF,0x35,0x35,0x80);
-    u64 cY = GS_SETREG_RGBA(0xFF,0xEE,0x40,0x80), cO = GS_SETREG_RGBA(0xFF,0x99,0x20,0x80);
-    u64 cC = GS_SETREG_RGBA(0x40,0xEE,0xFF,0x80), cD = GS_SETREG_RGBA(0x55,0x55,0x55,0x80);
+    dmaKit_init(D_CTRL_RELE_OFF, D_CTRL_MFD_OFF, D_CTRL_STS_UNSPEC,
+                D_CTRL_STD_OFF, D_CTRL_RCYC_8, 1 << DMA_CHANNEL_GIF);
+    dmaKit_chan_init(DMA_CHANNEL_GIF);
 
-    int mode = 0, frm = 0, wave = 0, hx = 140, hy = 250, hDir = 1;
-    int hp = 100, mHp = 100, stm = 100, souls = 0, wpnLv = 0, atkT = 0, rolT = 0;
-    int eAlv = 0, eBoss = 0, ex = 480, ey = 250, eHp = 40, eMHp = 40, eT = 0;
+    GSGLOBAL *gs = gsKit_init_global();
+    gs->PSM = GS_PSM_CT32;
+    gs->DoubleBuffering = GS_SETTING_ON;
+    gs->ZBuffering = GS_SETTING_OFF;
+    gsKit_init_screen(gs);
+    gsKit_mode_switch(gs, GS_ONESHOT);
+
+    Carta mao[5];
+    int cursor = 0, pontos = 0, meta = 40, maos = 4, descartes = 3, rodada = 1;
+    srand(777);
+    for (int i = 0; i < 5; i++) { mao[i].valor = 2 + (rand() % 13); mao[i].naipe = rand() % 4; mao[i].sel = 0; }
+
+    u64 cor_mesa  = GS_SETREG_RGBAQ(0x14, 0x48, 0x26, 0x80, 0x00);
+    u64 cor_borda = GS_SETREG_RGBAQ(0x3B, 0x22, 0x12, 0x80, 0x00);
+    u64 cor_barra = GS_SETREG_RGBAQ(0x22, 0xCC, 0x55, 0x80, 0x00);
+    u64 cor_ouro  = GS_SETREG_RGBAQ(0xFF, 0xCC, 0x22, 0x80, 0x00);
+    u64 cor_verm  = GS_SETREG_RGBAQ(0xDD, 0x33, 0x33, 0x80, 0x00);
 
     while (1) {
-        readPads(); frm++;
-        if (atkT == 0 && rolT == 0 && stm < 100) stm += 2;
-        if (atkT > 0) atkT--;
-
-        if (mode == 0) {
-            if (wave == 0 && getKeyPressed(KEY_CROSS)) {
-                if (hx < 200) { hp = mHp; stm = 100; }
-                else if (hx < 320 && souls >= 50) { souls -= 50; wpnLv++; }
-            }
-
-            if (rolT > 0) { rolT--; hx += hDir * 7; }
-            else if (atkT == 0) {
-                if (getKey(KEY_UP) && hy > 195) hy -= 4;
-                if (getKey(KEY_DOWN) && hy < 315) hy += 4;
-                if (getKey(KEY_LEFT) && hx > 30) { hx -= 4; hDir = -1; }
-                if (getKey(KEY_RIGHT) && hx < 560) { hx += 4; hDir = 1; }
-                if (getKeyPressed(KEY_CIRCLE) && stm >= 20) { stm -= 20; rolT = 8; }
-
-                if (getKeyPressed(KEY_SQUARE) && stm >= 15) {
-                    stm -= 15; atkT = 9;
-                    int dmg = 15 + (wpnLv * 8);
-                    if (eAlv && abs(ey - hy) < 22 && ((hDir == 1 && ex >= hx && ex - hx < 65) || (hDir == -1 && ex <= hx && hx - ex < 65))) {
-                        eHp -= dmg; ex += hDir * 12;
-                    }
-                }
-            }
-
-            if (!eAlv && hx >= 545) {
-                hx = 50; wave++;
-                if (wave > 2) wave = 0;
-                else {
-                    eAlv = 1; ex = 480; ey = 250; eT = 0;
-                    eBoss = (wave == 2);
-                    eMHp = eBoss ? 150 : 45; eHp = eMHp;
-                }
-            }
-
-            if (eAlv) {
-                if (eHp <= 0) { eAlv = 0; souls += eBoss ? 150 : 50; }
-                else {
-                    if (abs(hy - ey) > 5) ey += (hy > ey) ? 2 : -2;
-                    if (abs(hx - ex) > 48) ex += (hx > ex) ? 2 : -2;
-                    else if (++eT >= 35) {
-                        eT = 0;
-                        if (rolT == 0) hp -= eBoss ? 22 : 10;
-                    }
-                }
-            }
-            if (hp <= 0) { souls = 0; eAlv = 0; mode = 1; }
-        } else if (getKeyPressed(KEY_CROSS)) {
-            wave = 0; hx = 140; hp = mHp; stm = 100; mode = 0;
+        if (padGetState(0, 0) == PAD_STATE_STABLE && padRead(0, 0, &btn) != 0) {
+            pad = 0xffff ^ btn.btns; np = pad & ~old; old = pad;
         }
 
-        // Limpa a tela inteira de preto a cada quadro (sem rastro e sem fundo)
-        rmStartFrame();
-        rmDrawRect(0, 0, 1280, 1024, cBlk);
+        if ((np & PAD_LEFT) && cursor > 0) cursor--;
+        if ((np & PAD_RIGHT) && cursor < 4) cursor++;
+        if (np & PAD_CROSS) mao[cursor].sel = !mao[cursor].sel;
 
-        sprintf(txt, "HP:%d/%d  STM:%d  ALMAS:%d  ESPADA:+%d  |  Tela %d/2", hp, mHp, stm, souls, wpnLv, wave);
-        fntRenderString(0, 25, 25, 0, 0, 0, txt, cG);
-        fntRenderString(0, 20, 205, 0, 0, 0, "------------------------------------------------------------------", cD);
-        fntRenderString(0, 20, 360, 0, 0, 0, "==================================================================", cW);
-
-        if (wave == 0) {
-            fntRenderString(0, 130, 225, 0, 0, 0, (frm%16<8) ? " ^*^ " : " *^* ", cO);
-            fntRenderString(0, 110, 195, 0, 0, 0, "Fogueira(X)", cO);
-            fntRenderString(0, 255, 225, 0, 0, 0, " /|\\T", cC);
-            fntRenderString(0, 230, 195, 0, 0, 0, "Upar Arma 50(X)", cC);
-        }
-        if (!eAlv && mode == 0 && frm%30 < 15) fntRenderString(0, 520, 175, 0, 0, 0, "SIGA ==>", cY);
-
-        for (int p = 0; p < 2; p++) {
-            int dH = (p == 0) ? (hy <= ey) : (hy > ey);
-            if (dH) {
-                fntRenderString(0, hx, hy, 0, 0, 0, "  o  ", cW);
-                fntRenderString(0, hx, hy+18, 0, 0, 0, atkT ? (hDir>0 ? " /|==>" : "<==|\\ ") : " /|\\ ", cW);
-                fntRenderString(0, hx, hy+36, 0, 0, 0, (frm%16<8) ? " / > " : " < \\ ", cW);
-            } else if (eAlv) {
-                fntRenderString(0, ex, ey, 0, 0, 0, eBoss ? " \\O/ " : "  o  ", cR);
-                fntRenderString(0, ex, ey+18, 0, 0, 0, eBoss ? "<=#=>" : "-/|\\ ", cR);
-                fntRenderString(0, ex, ey+36, 0, 0, 0, " / \\ ", cR);
+        /* Jogar Mao (Quadrado) */
+        if ((np & PAD_SQUARE) && maos > 0) {
+            int ganho = avaliar_jogada(mao);
+            if (ganho > 0) {
+                pontos += ganho;
+                maos--;
+                for (int i = 0; i < 5; i++) {
+                    if (mao[i].sel) { mao[i].valor = 2 + (rand() % 13); mao[i].naipe = rand() % 4; mao[i].sel = 0; }
+                }
+                if (pontos >= meta) {
+                    rodada++; pontos = 0; meta += 35; maos = 4; descartes = 3;
+                }
             }
         }
 
-        if (mode == 1) fntRenderString(0, 220, 180, 0, 0, 0, "VOCE MORREU - Aperte (X)", cR);
-        fntRenderString(0, 25, 415, 0, 0, 0, "Setas:Mover | Quad:Atacar | Bolinha:Rolar | X:Interagir", cD);
-        rmEndFrame();
+        /* Descartar (Triangulo) */
+        if ((np & PAD_TRIANGLE) && descartes > 0) {
+            int trocou = 0;
+            for (int i = 0; i < 5; i++) {
+                if (mao[i].sel) { mao[i].valor = 2 + (rand() % 13); mao[i].naipe = rand() % 4; mao[i].sel = 0; trocou = 1; }
+            }
+            if (trocou) descartes--;
+        }
+
+        /* Reiniciar se perder ou apertar START */
+        if ((np & PAD_START) || (maos == 0 && pontos < meta)) {
+            if (maos == 0 && pontos < meta && !(np & PAD_CROSS) && !(np & PAD_START)) {
+                gsKit_clear(gs, cor_verm);
+                gsKit_queue_exec(gs); gsKit_sync_flip(gs);
+                continue;
+            }
+            rodada = 1; pontos = 0; meta = 40; maos = 4; descartes = 3;
+            for (int i = 0; i < 5; i++) { mao[i].valor = 2 + (rand() % 13); mao[i].naipe = rand() % 4; mao[i].sel = 0; }
+        }
+
+        /* Renderizacao da Mesa Pixel Art */
+        gsKit_clear(gs, cor_borda);
+        gsKit_prim_sprite(gs, 24, 24, 616, 424, 1, cor_mesa);
+
+        /* Barra de Meta de Pontos no Topo */
+        gsKit_prim_sprite(gs, 60, 48, 580, 74, 2, cor_borda);
+        float pct = (float)pontos / (float)meta;
+        if (pct > 1.0f) pct = 1.0f;
+        gsKit_prim_sprite(gs, 64, 52, 64 + (512.0f * pct), 70, 3, cor_barra);
+
+        /* Fichas de Maos Restantes (Ouro) e Descartes (Vermelho) */
+        for (int m = 0; m < maos; m++)
+            gsKit_prim_sprite(gs, 64 + m * 36, 94, 90 + m * 36, 114, 3, cor_ouro);
+        for (int d = 0; d < descartes; d++)
+            gsKit_prim_sprite(gs, 470 + d * 36, 94, 496 + d * 36, 114, 3, cor_verm);
+
+        /* Desenhar as 5 Cartas na Mao */
+        for (int i = 0; i < 5; i++) {
+            float cy = mao[i].sel ? 200.0f : 235.0f;
+            desenhar_carta(gs, mao[i], 85.0f + i * 98.0f, cy, (i == cursor));
+        }
+
+        gsKit_queue_exec(gs);
+        gsKit_sync_flip(gs);
     }
     return 0;
 }
