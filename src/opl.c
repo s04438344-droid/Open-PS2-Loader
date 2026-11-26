@@ -4,6 +4,15 @@
 #include "include/pad.h"
 #include <stdio.h>
 #include <stdlib.h>
+// Variaveis e funcoes exigidas pelo renderman.c e pad.c
+int gVMode = 0;
+int gXOff = 0;
+int gYOff = 0;
+int gOverscan = 0;
+int gWideScreen = 0;
+void KeyPressedOnce(void) {}
+void DisableCron(void) {}
+
 
 int main(int argc, char *argv) {
     // Inicializa apenas Video, Fontes e Controles do PS2 (sem interface do OPL)
