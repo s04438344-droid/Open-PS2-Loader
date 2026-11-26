@@ -1,10 +1,12 @@
-EE_BIN = DICE_KALMA_PS2.ELF
+EE_BIN = OPNPS2LD.ELF
 EE_OBJS = main.o
 EE_INCS = -I$(PS2SDK)/ports/include -I$(GSKIT)/include
 EE_LDFLAGS = -L$(PS2SDK)/ports/lib -L$(GSKIT)/lib
 EE_LIBS = -lgskit -ldmakit -lpad -lc -lkernel
 
 all: $(EE_BIN)
+
+release: all
 
 clean:
 	rm -f $(EE_BIN) $(EE_OBJS)
