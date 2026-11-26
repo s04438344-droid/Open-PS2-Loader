@@ -8,40 +8,45 @@
 #include <gsKit.h>
 #include <dmaKit.h>
 
-static u64 padBuf __attribute__((aligned(64)));
+static u64 padBuf[32] __attribute__((aligned(64)));
 
-/* Sprites 5x5 dos Naipes (0=Copas, 1=Ouros, 2=Espadas, 3=Paus) e Numeros (1..9, 10=X, 11=J, 12=Q, 13=K, 14=A) */
+/* Sprites 5x5 dos Naipes (0=Copas, 1=Ouros, 2=Espadas, 3=Paus) */
 static const char NAIPES[4][5][6] = {
-    { "01010", "11111", "11111", "01110", "00100" }, /* Copas */
-    { "00100", "01110", "11111", "01110", "00100" }, /* Ouros */
-    { "00100", "01110", "11111", "00100", "01110" }, /* Espadas */
-    { "01110", "11111", "01110", "00100", "01110" }  /* Paus */
+    { "01010", "11111", "11111", "01110", "00100" },
+    { "00100", "01110", "11111", "01110", "00100" },
+    { "00100", "01110", "11111", "00100", "01110" },
+    { "01110", "11111", "01110", "00100", "01110" }
 };
 
+/* Sprites 3x5 dos Valores das Cartas (2..10, J, Q, K, A) */
 static const char DIGITOS[15][5][4] = {
     { "000","000","000","000","000" },
-    { "010","110","010","010","111" }, /* 1 */
-    { "111","001","111","100","111" }, /* 2 */
-    { "111","001","111","001","111" }, /* 3 */
-    { "101","101","111","001","001" }, /* 4 */
-    { "111","100","111","001","111" }, /* 5 */
-    { "111","100","111","101","111" }, /* 6 */
-    { "111","001","001","001","001" }, /* 7 */
-    { "111","101","111","101","111" }, /* 8 */
-    { "111","101","111","001","111" }, /* 9 */
-    { "101","101","010","101","101" }, /* X (10) */
-    { "001","001","001","101","111" }, /* J (11) */
-    { "111","101","101","111","001" }, /* Q (12) */
-    { "101","101","110","101","101" }, /* K (13) */
-    { "010","101","111","101","101" }  /* A (14) */
+    { "010","110","010","010","111" },
+    { "111","001","111","100","111" },
+    { "111","001","111","001","111" },
+    { "101","101","111","001","001" },
+    { "111","100","111","001","111" },
+    { "111","100","111","101","111" },
+    { "111","001","001","001","001" },
+    { "111","101","111","101","111" },
+    { "111","101","111","001","111" },
+    { "101","101","010","101","101" },
+    { "001","001","001","101","111" },
+    { "111","101","101","111","001" },
+    { "101","101","110","101","101" },
+    { "010","101","111","101","101" }
 };
 
-typedef struct { int valor, naipe, sel; } Carta;
+typedef struct {
+    int valor;
+    int naipe;
+    int sel;
+} Carta;
 
-void desenhar_pixel_art(GSGLOBAL *gs, float x, float y, float esc, int w, int h, const char *grade, u64 cor) {
+void desenhar_pixel_art(GSGLOBAL *gs, float x, float y, float esc, int w, int h, int stride, const char *grade, u64 cor) {
     for (int r = 0; r < h; r++) {
         for (int c = 0; c < w; c++) {
-            if (grade[r * (w + 1) + c] == '1') {
+            if (grade[r * stride + c] == '1') {
                 gsKit_prim_sprite(gs, x + c * esc, y + r * esc,
                                   x + (c + 1) * esc, y + (r + 1) * esc, 5, cor);
             }
@@ -54,20 +59,22 @@ void desenhar_carta(GSGLOBAL *gs, Carta c, float x, float y, int foco) {
     u64 c_fundo = GS_SETREG_RGBAQ(0xF2, 0xEE, 0xE5, 0x80, 0x00);
     u64 c_naipe = (c.naipe < 2) ? GS_SETREG_RGBAQ(0xDD, 0x22, 0x22, 0x80, 0x00) : GS_SETREG_RGBAQ(0x18, 0x18, 0x22, 0x80, 0x00);
 
-    /* Sombra + Borda + Papel da Carta (76x112 pixels) */
     gsKit_prim_sprite(gs, x + 4, y + 4, x + 80, y + 116, 2, GS_SETREG_RGBAQ(0x08, 0x20, 0x10, 0x80, 0x00));
     gsKit_prim_sprite(gs, x - 3, y - 3, x + 79, y + 115, 3, c_borda);
     gsKit_prim_sprite(gs, x, y, x + 76, y + 112, 4, c_fundo);
 
-    /* Valor e Naipe em Pixel Art */
-    desenhar_pixel_art(gs, x + 8, y + 8, 4.0f, 3, 5, (const char *)DIGITOS[c.valor], c_naipe);
-    desenhar_pixel_art(gs, x + 23, y + 44, 6.0f, 5, 5, (const char *)NAIPES[c.naipe], c_naipe);
+    desenhar_pixel_art(gs, x + 8, y + 8, 4.0f, 3, 5, 4, (const char *)DIGITOS[c.valor], c_naipe);
+    desenhar_pixel_art(gs, x + 23, y + 44, 6.0f, 5, 5, 6, (const char *)NAIPES[c.naipe], c_naipe);
 }
 
 int avaliar_jogada(Carta mao[5]) {
-    int cont[15] = {0}, soma = 0, pares = 0, trinca = 0, quadra = 0;
+    int cont[15] = {0};
+    int soma = 0, pares = 0, trinca = 0, quadra = 0;
     for (int i = 0; i < 5; i++) {
-        if (mao[i].sel) { cont[mao[i].valor]++; soma += mao[i].valor; }
+        if (mao[i].sel) {
+            cont[mao[i].valor]++;
+            soma += mao[i].valor;
+        }
     }
     if (soma == 0) return 0;
     for (int v = 2; v <= 14; v++) {
@@ -105,9 +112,13 @@ int main(void) {
     gsKit_mode_switch(gs, GS_ONESHOT);
 
     Carta mao[5];
-    int cursor = 0, pontos = 0, meta = 40, maos = 4, descartes = 3, rodada = 1;
+    int cursor = 0, pontos = 0, meta = 40, maos = 4, descartes = 3;
     srand(777);
-    for (int i = 0; i < 5; i++) { mao[i].valor = 2 + (rand() % 13); mao[i].naipe = rand() % 4; mao[i].sel = 0; }
+    for (int i = 0; i < 5; i++) {
+        mao[i].valor = 2 + (rand() % 13);
+        mao[i].naipe = rand() % 4;
+        mao[i].sel = 0;
+    }
 
     u64 cor_mesa  = GS_SETREG_RGBAQ(0x14, 0x48, 0x26, 0x80, 0x00);
     u64 cor_borda = GS_SETREG_RGBAQ(0x3B, 0x22, 0x12, 0x80, 0x00);
@@ -117,7 +128,9 @@ int main(void) {
 
     while (1) {
         if (padGetState(0, 0) == PAD_STATE_STABLE && padRead(0, 0, &btn) != 0) {
-            pad = 0xffff ^ btn.btns; np = pad & ~old; old = pad;
+            pad = 0xffff ^ btn.btns;
+            np = pad & ~old;
+            old = pad;
         }
 
         if ((np & PAD_LEFT) && cursor > 0) cursor--;
@@ -131,10 +144,17 @@ int main(void) {
                 pontos += ganho;
                 maos--;
                 for (int i = 0; i < 5; i++) {
-                    if (mao[i].sel) { mao[i].valor = 2 + (rand() % 13); mao[i].naipe = rand() % 4; mao[i].sel = 0; }
+                    if (mao[i].sel) {
+                        mao[i].valor = 2 + (rand() % 13);
+                        mao[i].naipe = rand() % 4;
+                        mao[i].sel = 0;
+                    }
                 }
                 if (pontos >= meta) {
-                    rodada++; pontos = 0; meta += 35; maos = 4; descartes = 3;
+                    pontos = 0;
+                    meta += 35;
+                    maos = 4;
+                    descartes = 3;
                 }
             }
         }
@@ -143,23 +163,36 @@ int main(void) {
         if ((np & PAD_TRIANGLE) && descartes > 0) {
             int trocou = 0;
             for (int i = 0; i < 5; i++) {
-                if (mao[i].sel) { mao[i].valor = 2 + (rand() % 13); mao[i].naipe = rand() % 4; mao[i].sel = 0; trocou = 1; }
+                if (mao[i].sel) {
+                    mao[i].valor = 2 + (rand() % 13);
+                    mao[i].naipe = rand() % 4;
+                    mao[i].sel = 0;
+                    trocou = 1;
+                }
             }
             if (trocou) descartes--;
         }
 
-        /* Reiniciar se perder ou apertar START */
+        /* Reiniciar (START ou apos derrota) */
         if ((np & PAD_START) || (maos == 0 && pontos < meta)) {
             if (maos == 0 && pontos < meta && !(np & PAD_CROSS) && !(np & PAD_START)) {
                 gsKit_clear(gs, cor_verm);
-                gsKit_queue_exec(gs); gsKit_sync_flip(gs);
+                gsKit_queue_exec(gs);
+                gsKit_sync_flip(gs);
                 continue;
             }
-            rodada = 1; pontos = 0; meta = 40; maos = 4; descartes = 3;
-            for (int i = 0; i < 5; i++) { mao[i].valor = 2 + (rand() % 13); mao[i].naipe = rand() % 4; mao[i].sel = 0; }
+            pontos = 0;
+            meta = 40;
+            maos = 4;
+            descartes = 3;
+            for (int i = 0; i < 5; i++) {
+                mao[i].valor = 2 + (rand() % 13);
+                mao[i].naipe = rand() % 4;
+                mao[i].sel = 0;
+            }
         }
 
-        /* Renderizacao da Mesa Pixel Art */
+        /* Renderizacao Pixel Art */
         gsKit_clear(gs, cor_borda);
         gsKit_prim_sprite(gs, 24, 24, 616, 424, 1, cor_mesa);
 
@@ -169,13 +202,13 @@ int main(void) {
         if (pct > 1.0f) pct = 1.0f;
         gsKit_prim_sprite(gs, 64, 52, 64 + (512.0f * pct), 70, 3, cor_barra);
 
-        /* Fichas de Maos Restantes (Ouro) e Descartes (Vermelho) */
+        /* Fichas de Maos (Ouro) e Descartes (Vermelho) */
         for (int m = 0; m < maos; m++)
             gsKit_prim_sprite(gs, 64 + m * 36, 94, 90 + m * 36, 114, 3, cor_ouro);
         for (int d = 0; d < descartes; d++)
             gsKit_prim_sprite(gs, 470 + d * 36, 94, 496 + d * 36, 114, 3, cor_verm);
 
-        /* Desenhar as 5 Cartas na Mao */
+        /* Desenhar as 5 Cartas */
         for (int i = 0; i < 5; i++) {
             float cy = mao[i].sel ? 200.0f : 235.0f;
             desenhar_carta(gs, mao[i], 85.0f + i * 98.0f, cy, (i == cursor));
